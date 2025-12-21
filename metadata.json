@@ -1,0 +1,5 @@
+{
+  "name": "Knight Chase",
+  "description": "A turn-based strategy game on a notebook. Outsmart your opponent by trapping them or capturing their piece!",
+  "requestFramePermissions": []
+}

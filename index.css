@@ -1,0 +1,193 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  background-color: #fdfbf7; /* Paper color default */
+  color: #27272a;
+  overflow-x: hidden;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* Graph Paper Pattern - Made Subtler */
+.bg-paper {
+  background-color: #fdfbf7;
+  background-image: 
+    linear-gradient(#e5e7eb 1px, transparent 1px), 
+    linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+  background-size: 32px 32px;
+  /* Lighter opacity for the lines to prevent clutter */
+  background-blend-mode: multiply;
+}
+
+/* --- THEMES --- */
+
+/* Blue Ink Theme */
+.theme-blue .sketch-border {
+    border-color: #1e40af; /* Blue-800 */
+    background-color: #eff6ff;
+}
+.theme-blue .bg-paper-variant {
+    background-color: #eff6ff;
+    /* Very subtle blue lines */
+    background-image: 
+      linear-gradient(rgba(191, 219, 254, 0.4) 1px, transparent 1px), 
+      linear-gradient(90deg, rgba(191, 219, 254, 0.4) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+
+/* Neon Theme */
+.theme-neon {
+    background-color: #18181b;
+    color: #fef08a;
+}
+.theme-neon .sketch-border {
+    border-color: #fef08a;
+    background-color: #27272a;
+    box-shadow: 0 0 10px #fef08a;
+}
+.theme-neon .bg-paper-variant {
+    background-color: #27272a;
+    background-image: 
+      linear-gradient(#4b5563 1px, transparent 1px), 
+      linear-gradient(90deg, #4b5563 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+
+/* Chalkboard Theme */
+.theme-chalk {
+    background-color: #27272a; /* Zinc 800 */
+    color: #f4f4f5;
+}
+.theme-chalk .sketch-border {
+    border-color: #e4e4e7;
+    border-width: 3px;
+    background-color: #3f3f46;
+    box-shadow: 2px 3px 5px rgba(255,255,255,0.05);
+}
+.theme-chalk .bg-paper-variant {
+    background-color: #3f3f46;
+    background-image: 
+      linear-gradient(#71717a 1px, transparent 1px), 
+      linear-gradient(90deg, #71717a 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+
+/* --- EXISTING STYLES --- */
+
+.sketch-border {
+  border: 2px solid #27272a;
+  border-radius: 2px 255px 3px 25px / 255px 5px 225px 10px;
+  box-shadow: 2px 3px 5px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+
+.sketch-button {
+    position: relative;
+    border: 3px solid #27272a;
+    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+    box-shadow: 2px 4px 0px 0px rgba(39, 39, 42, 1);
+    transition: all 0.15s ease;
+    transform: rotate(-0.5deg);
+    background: white;
+}
+
+.sketch-button:hover {
+    transform: rotate(0.5deg) scale(1.02);
+    box-shadow: 3px 5px 0px 0px rgba(39, 39, 42, 1);
+}
+
+.sketch-button:active {
+    transform: translate(2px, 4px) rotate(0deg);
+    box-shadow: 0px 0px 0px 0px rgba(39, 39, 42, 1);
+}
+
+/* Button Color Variants */
+.btn-blue { background-color: #e0f2fe; } /* Sky 100 */
+.btn-orange { background-color: #ffedd5; } /* Orange 100 */
+.btn-green { background-color: #dcfce7; } /* Green 100 */
+.btn-purple { background-color: #f3e8ff; } /* Purple 100 */
+.btn-yellow { background-color: #fef9c3; } /* Yellow 100 */
+.btn-gray { background-color: #f4f4f5; } /* Zinc 100 */
+
+.sketch-modal {
+    background: white;
+    border: 3px solid #27272a;
+    border-radius: 5px 255px 5px 25px / 255px 5px 225px 5px;
+    box-shadow: 8px 8px 0px 0px rgba(0,0,0,0.1);
+}
+
+@keyframes scribble {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(2deg) scale(1.02); }
+    50% { transform: rotate(-1deg) scale(0.98); }
+    75% { transform: rotate(1deg) scale(1.01); }
+    100% { transform: rotate(0deg) scale(1); }
+}
+
+.animate-scribble:hover {
+    animation: scribble 0.4s ease-in-out infinite;
+}
+
+.font-hand {
+    font-family: 'Architects Daughter', cursive;
+}
+
+/* --- NEW ANIMATIONS --- */
+
+/* Crumple Effect for Defeat */
+@keyframes crumple {
+    0% { transform: scale(1) rotate(1deg); filter: brightness(1); }
+    20% { transform: scale(0.95) rotate(-2deg); }
+    100% { transform: scale(0.1) rotate(720deg); opacity: 0; filter: brightness(0.8) contrast(1.2); }
+}
+
+.crumple-active {
+    animation: crumple 0.8s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+    transform-origin: center center;
+}
+
+/* Sticker Pop */
+@keyframes pop-in {
+    0% { transform: scale(0) rotate(var(--rot)); opacity: 0; }
+    60% { transform: scale(1.2) rotate(var(--rot)); opacity: 1; }
+    100% { transform: scale(1) rotate(var(--rot)); opacity: 1; }
+}
+
+.sticker-pop {
+    animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Paper Plane Fly-By */
+@keyframes fly-plane {
+    0% { transform: translateX(-100%) translateY(100%) rotate(-10deg); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateX(300%) translateY(-200%) rotate(10deg); opacity: 1; }
+}
+
+.animate-plane {
+    animation: fly-plane 2s linear forwards;
+}
+
+/* Coffee Stain Spread */
+@keyframes spread {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-spread {
+    animation: spread 1s ease-out forwards;
+}
+
+/* Invisible Ink Fade */
+.invisible-fade {
+    animation: fadeOut 1s ease-in forwards;
+    animation-delay: 1.5s; /* Visible for 1.5s then fades */
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
