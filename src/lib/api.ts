@@ -14,7 +14,7 @@ const PORT = '3000';
 //    - The URL where your server is hosted (e.g., Render, Heroku, Railway)
 //    - Example: 'https://knight-chase-server.onrender.com'
 //    - LEAVE EMPTY '' if you are testing locally!
-const PRODUCTION_URL = ''; 
+const PRODUCTION_URL = 'https://knightchase.onrender.com'; 
 
 // ==========================================
 

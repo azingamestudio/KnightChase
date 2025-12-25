@@ -81,6 +81,7 @@ const App: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const [playerType, setPlayerType] = useState<'p1' | 'p2' | null>(null);
+  const [roomSearch, setRoomSearch] = useState<string>('');
 
 
 
@@ -313,13 +314,14 @@ const App: React.FC = () => {
                 />
             );
         case 'online_lobby':
+            const filteredRooms = rooms.filter(room => room.id.toLowerCase().includes(roomSearch.toLowerCase()));
             return (
                  <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
                      <h2 className="font-hand text-3xl font-bold mb-4">Online Multiplayer</h2>
                      {currentRoomId ? (
                        <div className="space-y-4">
-                         <p className="font-hand text-xl text-zinc-500">Oda ID: {currentRoomId}</p>
-                         <p className="font-hand text-xl text-zinc-500 animate-pulse">Rakip bekleniyor...</p>
+                         <p className="font-hand text-xl text-zinc-500">Room ID: {currentRoomId}</p>
+                         <p className="font-hand text-xl text-zinc-500 animate-pulse">Waiting for opponent...</p>
                          <button onClick={() => {
                            if (socketRef.current && currentRoomId) {
                              socketRef.current.emit('leaveRoom', currentRoomId, () => {
@@ -332,29 +334,40 @@ const App: React.FC = () => {
                              setPlayerType(null);
                              setView('menu');
                            }
-                         }} className="mt-4 text-zinc-400 hover:text-zinc-600 font-hand underline">Odadan Ayrıl</button>
+                         }} className="mt-4 text-zinc-400 hover:text-zinc-600 font-hand underline">Leave Room</button>
                        </div>
                      ) : (
-                       <div className="space-y-4">
+                       <div className="space-y-4 w-full max-w-md">
                          <button onClick={createRoom} className="w-full sketch-button py-4 px-6 bg-blue-50 hover:bg-blue-100 flex items-center justify-center group">
-                             <span className="font-hand text-2xl font-bold">Oda Oluştur</span>
+                             <span className="font-hand text-2xl font-bold">Create Room</span>
                          </button>
-                         <h3 className="font-hand text-2xl font-bold mt-8 mb-4">Mevcut Odalar</h3>
-                         {rooms.length === 0 ? (
-                           <p className="font-hand text-xl text-zinc-500">Henüz oda yok. Bir oda oluşturun!</p>
+                         
+                         <div className="mt-8 mb-4">
+                            <h3 className="font-hand text-2xl font-bold mb-2">Available Rooms</h3>
+                            <input 
+                                type="text" 
+                                placeholder="Search Room ID..." 
+                                value={roomSearch}
+                                onChange={(e) => setRoomSearch(e.target.value)}
+                                className="w-full p-2 border-2 border-zinc-300 rounded font-hand focus:outline-none focus:border-blue-400"
+                            />
+                         </div>
+
+                         {filteredRooms.length === 0 ? (
+                           <p className="font-hand text-xl text-zinc-500">No rooms found. Create one!</p>
                          ) : (
-                           <ul className="space-y-2">
-                             {rooms.map(room => (
+                           <ul className="space-y-2 max-h-64 overflow-y-auto">
+                             {filteredRooms.map(room => (
                                <li key={room.id} className="flex justify-between items-center sketch-border p-4 bg-white/5">
-                                 <span className="font-hand text-xl">Oda: {room.id} ({room.players}/{room.maxPlayers})</span>
-                                 <button onClick={() => joinRoom(room.id)} disabled={room.players >= room.maxPlayers} className="sketch-button px-4 py-2 bg-green-50 hover:bg-green-100 font-hand text-lg">
-                                   Katıl
+                                 <span className="font-hand text-xl">Room: {room.id} ({room.players}/{room.maxPlayers})</span>
+                                 <button onClick={() => joinRoom(room.id)} disabled={room.players >= room.maxPlayers} className="sketch-button px-4 py-2 bg-green-50 hover:bg-green-100 font-hand text-lg disabled:opacity-50">
+                                   Join
                                  </button>
                                </li>
                              ))}
                            </ul>
                          )}
-                         <button onClick={() => setView('menu')} className="mt-12 text-zinc-400 hover:text-zinc-600 font-hand underline">Geri</button>
+                         <button onClick={() => setView('menu')} className="mt-12 text-zinc-400 hover:text-zinc-600 font-hand underline">Back</button>
                        </div>
                      )}
                  </div>

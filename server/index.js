@@ -181,7 +181,40 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Oyun hamlesi
+  // Leave Room
+  socket.on('leaveRoom', (roomId, callback) => {
+    if (rooms[roomId]) {
+      rooms[roomId].players = rooms[roomId].players.filter(id => id !== socket.id);
+      socket.leave(roomId);
+      delete socket.roomId;
+      
+      if (rooms[roomId].players.length === 0) {
+        delete rooms[roomId];
+      } else {
+        io.to(roomId).emit('playerLeft', socket.id);
+      }
+      
+      io.emit('roomList', Object.keys(rooms).map(roomId => ({
+        id: roomId,
+        players: rooms[roomId].players.length,
+        maxPlayers: 2
+      })));
+      
+      if (callback) callback({ success: true });
+    } else {
+        if (callback) callback({ success: false });
+    }
+  });
+
+  // Generic Game State Update (for non-move updates like spawning items)
+  socket.on('updateGameState', ({ roomId, gameState }) => {
+      if (rooms[roomId]) {
+          rooms[roomId].gameState = gameState;
+          io.to(roomId).emit('gameStateUpdate', gameState);
+      }
+  });
+
+  // Game Move
   socket.on('gameMove', ({ roomId, fromPosition, toPosition, playerTurn, newGameState }) => {
     if (rooms[roomId]) {
       rooms[roomId].gameState = newGameState;

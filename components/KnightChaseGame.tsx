@@ -219,6 +219,10 @@ export const KnightChaseGame: React.FC<GameProps> = ({
   // --- SPAWN MYSTERY BOX ---
   useEffect(() => {
       if (winner || mysteryPos || activePowerUp) return;
+      
+      // Online: Only Host (P1) spawns
+      if (mode === 'online' && playerType !== 'p1') return;
+
       if (Math.random() < 0.15) {
           let x, y;
           let attempts = 0;
@@ -229,9 +233,21 @@ export const KnightChaseGame: React.FC<GameProps> = ({
           } while (
               (blocked.has(`${x},${y}`) || (p1Pos.x === x && p1Pos.y === y) || (p2Pos.x === x && p2Pos.y === y)) && attempts < 20
           );
-          if (attempts < 20) setMysteryPos({x, y});
+          if (attempts < 20) {
+              const newPos = {x, y};
+              setMysteryPos(newPos);
+              
+              if (mode === 'online' && socket && roomId) {
+                  const currentGameState = {
+                      p1Pos, p2Pos, blocked: Array.from(blocked), turn, turnCount, winner, winReason,
+                      mysteryPos: newPos,
+                      activePowerUp, powerUpMessage, p1Sabotage
+                  };
+                  socket.emit('updateGameState', { roomId, gameState: currentGameState });
+              }
+          }
       }
-  }, [turn, blocked, p1Pos, p2Pos, mysteryPos, winner, activePowerUp]);
+  }, [turn, blocked, p1Pos, p2Pos, mysteryPos, winner, activePowerUp, mode, playerType, socket, roomId]);
 
   const resetGame = () => {
     setIsCrumpled(false);
@@ -331,81 +347,127 @@ export const KnightChaseGame: React.FC<GameProps> = ({
 
   const makeMove = async (target: Position) => {
     if (winner) return;
+    
+    // Online Turn Check
+    if (mode === 'online' && socket && roomId && playerType && playerType !== turn) {
+        console.log("It's not your turn!");
+        return;
+    }
+
     playSFX('sfx_pencil.mp3');
     const currentPos = turn === 'p1' ? p1Pos : p2Pos;
 
-    if (mode === 'online' && socket && roomId && playerType) {
-      if (playerType !== turn) {
-        console.log("It's not your turn!");
-        return;
-      }
-      const newBlocked = new Set(blocked);
-      newBlocked.add(`${currentPos.x},${currentPos.y}`);
-      const newGameState = {
-        p1Pos: turn === 'p1' ? target : p1Pos,
-        p2Pos: turn === 'p2' ? target : p2Pos,
-        blocked: Array.from(newBlocked),
-        turn: (turn === 'p1' ? 'p2' : 'p1'), // Turn always switches in online mode
-        turnCount: turnCount + 1,
-        winner: null,
-        winReason: '',
-        mysteryPos: mysteryPos,
-        activePowerUp: activePowerUp,
-        powerUpMessage: powerUpMessage,
-        p1Sabotage: p1Sabotage,
-      };
-      socket.emit('gameMove', { roomId, fromPosition: currentPos, toPosition: target, playerTurn: playerType, newGameState });
-      return; // Sunucudan gelen güncellemeyi bekleyeceğiz
-    }
-    
     // Sabotage Gain
+    let nextP1Sabotage = p1Sabotage;
     if (turn === 'p1' && modifiers.sabotage) {
-        setP1Sabotage(prev => Math.min(100, prev + 20));
+        nextP1Sabotage = Math.min(100, p1Sabotage + 20);
+        setP1Sabotage(nextP1Sabotage);
     }
 
+    // Mystery Box Collection
     let collectedPowerUp: PowerUpType | null = null;
+    let nextMysteryPos = mysteryPos;
     if (mysteryPos && target.x === mysteryPos.x && target.y === mysteryPos.y) {
         const types: PowerUpType[] = ['teleport', 'bomb', 'freeze'];
         collectedPowerUp = types[Math.floor(Math.random() * types.length)];
+        nextMysteryPos = null;
         setMysteryPos(null);
     }
 
+    // Base Blocked Update
     const newBlocked = new Set(blocked);
     newBlocked.add(`${currentPos.x},${currentPos.y}`);
     setBlocked(newBlocked);
 
-    if (turn === 'p1') setP1Pos(target);
-    else setP2Pos(target);
+    // Update Positions
+    let nextP1 = p1Pos;
+    let nextP2 = p2Pos;
+    if (turn === 'p1') { nextP1 = target; setP1Pos(target); }
+    else { nextP2 = target; setP2Pos(target); }
 
+    // Active PowerUp Cleanup
+    let nextActivePowerUp = activePowerUp;
+    let nextPowerUpMessage = powerUpMessage;
     if (activePowerUp && activePowerUp.player === turn && activePowerUp.type === 'teleport') {
-        setActivePowerUp(null); setPowerUpMessage(null);
+        nextActivePowerUp = null; 
+        nextPowerUpMessage = null;
+        setActivePowerUp(null); 
+        setPowerUpMessage(null);
     }
 
+    // Apply Collected PowerUp
     let nextBlocked = newBlocked;
     let skipSwitch = false;
 
     if (collectedPowerUp) {
         if (collectedPowerUp === 'teleport') {
-            setActivePowerUp({ player: turn, type: 'teleport' });
-            setPowerUpMessage(`${turn === 'p1' ? playerNames.p1 : oppName} got TELEPORT!`);
+            nextActivePowerUp = { player: turn, type: 'teleport' };
+            nextPowerUpMessage = `${turn === 'p1' ? playerNames.p1 : oppName} got TELEPORT!`;
+            setActivePowerUp(nextActivePowerUp);
+            setPowerUpMessage(nextPowerUpMessage);
         } else {
             const res = applyPowerUp(turn, collectedPowerUp, target, newBlocked);
             nextBlocked = res.newBlocked;
             if (res.skipTurnSwitch) skipSwitch = true;
+            
+            nextPowerUpMessage = `${turn === 'p1' ? playerNames.p1 : oppName} used ${collectedPowerUp.toUpperCase()}!`;
+            setPowerUpMessage(nextPowerUpMessage);
             setTimeout(() => setPowerUpMessage(null), 2000);
         }
     }
     setBlocked(nextBlocked);
 
-    const p1 = turn === 'p1' ? target : p1Pos;
-    const p2 = turn === 'p2' ? target : p2Pos;
-    const isTeleporting = activePowerUp?.player === turn && activePowerUp?.type === 'teleport';
+    // Check Win (Duplicate logic to ensure sync)
+    let nextWinner = null;
+    let nextWinReason = '';
     
-    if (checkWin(p1, p2, nextBlocked, turn, isTeleporting)) return;
+    // Check Capture
+    if (nextP1.x === nextP2.x && nextP1.y === nextP2.y) {
+        nextWinner = turn === 'p1' ? 'p1' : 'p2';
+        nextWinReason = "CAPTURED THE ENEMY!";
+        setWinner(nextWinner); setWinReason(nextWinReason);
+        if (nextWinner !== 'p1') setIsCrumpled(true);
+    } else {
+        // Check Trapped
+        const nextPlayer = turn === 'p1' ? 'p2' : 'p1';
+        const nextPos = nextPlayer === 'p1' ? nextP1 : nextP2;
+        const nextPlayerHasTeleport = nextActivePowerUp?.player === nextPlayer && nextActivePowerUp?.type === 'teleport';
+        const nextMoves = getLegalMoves(nextPos, nextBlocked, nextPlayerHasTeleport);
+        
+        if (nextMoves.length === 0) {
+            nextWinner = turn;
+            nextWinReason = "OPPONENT IS TRAPPED!";
+            setWinner(nextWinner); setWinReason(nextWinReason);
+            if (turn !== 'p1') setIsCrumpled(true);
+        }
+    }
 
-    if (!skipSwitch) {
-        setTurn(prev => prev === 'p1' ? 'p2' : 'p1');
-        setTurnCount(prev => prev + 1);
+    // Switch Turn
+    let nextTurn = turn;
+    let nextTurnCount = turnCount;
+    if (!nextWinner && !skipSwitch) {
+        nextTurn = turn === 'p1' ? 'p2' : 'p1';
+        nextTurnCount = turnCount + 1;
+        setTurn(nextTurn);
+        setTurnCount(nextTurnCount);
+    }
+
+    // ONLINE SYNC
+    if (mode === 'online' && socket && roomId) {
+         const newGameState = {
+            p1Pos: nextP1,
+            p2Pos: nextP2,
+            blocked: Array.from(nextBlocked),
+            turn: nextTurn,
+            turnCount: nextTurnCount,
+            winner: nextWinner,
+            winReason: nextWinReason,
+            mysteryPos: nextMysteryPos,
+            activePowerUp: nextActivePowerUp,
+            powerUpMessage: nextPowerUpMessage,
+            p1Sabotage: nextP1Sabotage,
+        };
+        socket.emit('gameMove', { roomId, fromPosition: currentPos, toPosition: target, playerTurn: playerType, newGameState });
     }
   };
 
