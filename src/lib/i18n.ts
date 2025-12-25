@@ -54,6 +54,11 @@ export interface Translation {
   mod_coffee: string;
   mod_sabotage: string;
   mod_invisible: string;
+
+  // Adventure
+  adventure_lives: string;
+  adventure_no_lives: string;
+  adventure_refill_in: string;
 }
 
 const translations: Record<LanguageCode, Translation> = {
@@ -101,7 +106,11 @@ const translations: Record<LanguageCode, Translation> = {
     
     mod_coffee: "Coffee Spill",
     mod_sabotage: "Sabotage",
-    mod_invisible: "Invisible Ink"
+    mod_invisible: "Invisible Ink",
+
+    adventure_lives: "Lives",
+    adventure_no_lives: "No lives left! Wait for refill or upgrade to Premium.",
+    adventure_refill_in: "Refills in:"
   },
   tr: {
     menu_ai_training: "Yapay Zeka Eğitimi",
@@ -147,7 +156,11 @@ const translations: Record<LanguageCode, Translation> = {
     
     mod_coffee: "Kahve Dökülmesi",
     mod_sabotage: "Sabotaj",
-    mod_invisible: "Görünmez Mürekkep"
+    mod_invisible: "Görünmez Mürekkep",
+
+    adventure_lives: "Can",
+    adventure_no_lives: "Can kalmadı! Yenilenmesini bekle veya Premium al.",
+    adventure_refill_in: "Yenilenme:"
   },
   ar: {
     menu_ai_training: "تدريب الذكاء الاصطناعي",
@@ -193,7 +206,11 @@ const translations: Record<LanguageCode, Translation> = {
     
     mod_coffee: "انسكاب القهوة",
     mod_sabotage: "تخريب",
-    mod_invisible: "حبر سري"
+    mod_invisible: "حبر سري",
+
+    adventure_lives: "Lives",
+    adventure_no_lives: "No lives left! Wait for refill or upgrade to Premium.",
+    adventure_refill_in: "Refills in:"
   },
   de: {
     menu_ai_training: "KI-Training",
@@ -239,7 +256,11 @@ const translations: Record<LanguageCode, Translation> = {
     
     mod_coffee: "Kaffee verschüttet",
     mod_sabotage: "Sabotage",
-    mod_invisible: "Unsichtbare Tinte"
+    mod_invisible: "Unsichtbare Tinte",
+
+    adventure_lives: "Lives",
+    adventure_no_lives: "No lives left! Wait for refill or upgrade to Premium.",
+    adventure_refill_in: "Refills in:"
   },
   es: {
     menu_ai_training: "Entrenamiento IA",
@@ -285,7 +306,11 @@ const translations: Record<LanguageCode, Translation> = {
     
     mod_coffee: "Derrame de Café",
     mod_sabotage: "Sabotaje",
-    mod_invisible: "Tinta Invisible"
+    mod_invisible: "Tinta Invisible",
+
+    adventure_lives: "Lives",
+    adventure_no_lives: "No lives left! Wait for refill or upgrade to Premium.",
+    adventure_refill_in: "Refills in:"
   },
   it: {
     menu_ai_training: "Allenamento IA",
@@ -316,7 +341,7 @@ const translations: Record<LanguageCode, Translation> = {
     game_turn_you: "IL TUO TURNO",
     game_turn_opponent: "TURNO AVVERSARIO",
     game_turn_thinking: "Sta pensando...",
-    game_match_ended: "Partita Terminata",
+    game_match_ended: "Partida Terminata",
     game_waiting_opponent: "In attesa avversario...",
     game_room_id: "ID Stanza:",
     game_leave_room: "Lascia Stanza",
@@ -331,7 +356,11 @@ const translations: Record<LanguageCode, Translation> = {
     
     mod_coffee: "Caffè Rovesciato",
     mod_sabotage: "Sabotaggio",
-    mod_invisible: "Inchiostro Invisibile"
+    mod_invisible: "Inchiostro Invisibile",
+
+    adventure_lives: "Lives",
+    adventure_no_lives: "No lives left! Wait for refill or upgrade to Premium.",
+    adventure_refill_in: "Refills in:"
   },
   ru: {
     menu_ai_training: "Тренировка с ИИ",
@@ -377,7 +406,11 @@ const translations: Record<LanguageCode, Translation> = {
     
     mod_coffee: "Разлитый кофе",
     mod_sabotage: "Саботаж",
-    mod_invisible: "Невидимые чернила"
+    mod_invisible: "Невидимые чернила",
+
+    adventure_lives: "Lives",
+    adventure_no_lives: "No lives left! Wait for refill or upgrade to Premium.",
+    adventure_refill_in: "Refills in:"
   }
 };
 

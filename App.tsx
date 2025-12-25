@@ -11,11 +11,12 @@ import { Leaderboard } from './components/Leaderboard';
 import { Settings } from './components/Settings';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { playMusic, stopMusic, toggleMute, getIsMuted } from './src/lib/audio';
-import { initializeAdMob, showBannerAd, hideBannerAd } from './src/lib/admob';
+import { initializeAdMob, showBannerAd, hideBannerAd, showInterstitialAd, prepareInterstitialAd } from './src/lib/admob';
 import { initializeStore, registerPremiumListener, purchasePremium, restorePurchases } from './src/lib/store';
 import { io, Socket } from 'socket.io-client';
 import { API_URL, SOCKET_URL, registerUser, submitScore } from './src/lib/api';
-import { getLanguage, setLanguage, LanguageCode } from './src/lib/i18n';
+import { getLanguage, setLanguage, LanguageCode, t } from './src/lib/i18n';
+import { safeStorage } from './src/lib/storage';
 
 type View = 'menu' | 'ai_select' | 'game_pvp' | 'game_ai' | 'game_adventure' | 'game_online' | 'adventure' | 'online_lobby' | 'leaderboard' | 'settings';
 
@@ -52,6 +53,15 @@ const App: React.FC = () => {
   const [isMutedState, setIsMutedState] = useState<boolean>(getIsMuted());
   const [currentLang, setCurrentLang] = useState<LanguageCode>(getLanguage());
 
+  // Adventure Mode Lives System
+  const MAX_LIVES_FREE = 10;
+  const MAX_LIVES_PREMIUM = 50;
+  const REFILL_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+
+  const [lives, setLives] = useState<number>(10);
+  const [lastRefill, setLastRefill] = useState<number>(Date.now());
+  const [gamesPlayedCount, setGamesPlayedCount] = useState<number>(0);
+
   const changeLanguage = (lang: LanguageCode) => {
       setLanguage(lang);
       setCurrentLang(lang);
@@ -63,7 +73,11 @@ const App: React.FC = () => {
     setIsMutedState(getIsMuted());
 
     // Initialize AdMob
-    initializeAdMob();
+    initializeAdMob().then(() => {
+        if (!isPremium) {
+            prepareInterstitialAd();
+        }
+    });
 
     // Initialize Store (IAP)
     initializeStore();
@@ -73,6 +87,52 @@ const App: React.FC = () => {
         setIsPremium(status);
     });
   }, []);
+
+  // Lives System Logic
+  useEffect(() => {
+    const storedLives = safeStorage.getItem('kc_lives');
+    const storedRefill = safeStorage.getItem('kc_last_refill');
+    const now = Date.now();
+    
+    let currentLives = storedLives ? parseInt(storedLives) : 10;
+    let lastTime = storedRefill ? parseInt(storedRefill) : now;
+
+    // Check refill
+    if (now - lastTime > REFILL_INTERVAL) {
+        const max = isPremium ? MAX_LIVES_PREMIUM : MAX_LIVES_FREE;
+        currentLives = max; // Refill to max
+        lastTime = now;
+        safeStorage.setItem('kc_lives', max.toString());
+        safeStorage.setItem('kc_last_refill', now.toString());
+    } else {
+        // If not refilled, ensure cap based on premium status?
+        // Actually, if they upgraded, we should probably boost them, but let's stick to refill logic for now.
+        // Or if they have > max (downgrade?), keep it.
+        if (isPremium && currentLives < MAX_LIVES_PREMIUM && currentLives === MAX_LIVES_FREE && !storedLives) {
+             // Initial load for premium user?
+             currentLives = MAX_LIVES_PREMIUM;
+             safeStorage.setItem('kc_lives', currentLives.toString());
+        }
+    }
+
+    setLives(currentLives);
+    setLastRefill(lastTime);
+
+    // Set up an interval to check for refill every minute
+    const interval = setInterval(() => {
+        const now = Date.now();
+        if (now - lastTime > REFILL_INTERVAL) {
+            const max = isPremium ? MAX_LIVES_PREMIUM : MAX_LIVES_FREE;
+            setLives(max);
+            setLastRefill(now);
+            safeStorage.setItem('kc_lives', max.toString());
+            safeStorage.setItem('kc_last_refill', now.toString());
+            lastTime = now; // Update local var for closure
+        }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [isPremium]);
 
   // AdMob Banner Management
   useEffect(() => {
@@ -159,8 +219,32 @@ const App: React.FC = () => {
   };
 
   const startAdventureLevel = (level: LevelConfig) => {
+      if (lives <= 0) {
+          // Double check logic for safety, though effect handles it
+          alert(t('adventure_no_lives', currentLang));
+          return;
+      }
+      
+      // Deduct Life
+      const newLives = lives - 1;
+      setLives(newLives);
+      safeStorage.setItem('kc_lives', newLives.toString());
+
       setConfig({ mode: 'adventure', difficulty: level.difficulty, levelConfig: level });
       setView('game_adventure');
+  };
+
+  const retryAdventureLevel = () => {
+      if (lives <= 0) {
+          alert(t('adventure_no_lives', currentLang));
+          setView('adventure');
+          return false;
+      }
+      
+      const newLives = lives - 1;
+      setLives(newLives);
+      safeStorage.setItem('kc_lives', newLives.toString());
+      return true;
   };
 
   const handleLevelComplete = () => {
@@ -176,6 +260,17 @@ const App: React.FC = () => {
       // If logged in/named, submit score
       if (playerNames.p1 && playerNames.p1 !== 'Player 1') {
           submitScore(playerNames.p1, score, isWin);
+      }
+  };
+
+  const handleAdTrigger = async () => {
+      if (isPremium) return;
+
+      const newCount = gamesPlayedCount + 1;
+      setGamesPlayedCount(newCount);
+
+      if (newCount % 4 === 0) {
+          await showInterstitialAd();
       }
   };
 
@@ -258,7 +353,10 @@ const App: React.FC = () => {
                     customSkin={customSkin}
                     playerNames={playerNames}
                     victoryDoodle={victoryDoodle}
-                    onBack={() => setView('menu')} 
+                    onBack={async () => {
+                        await handleAdTrigger();
+                        setView('menu');
+                    }} 
                     onScoreUpdate={handleScoreUpdate}
                     // New Props
                     theme={gameTheme}
@@ -266,8 +364,9 @@ const App: React.FC = () => {
                     socket={socketRef.current} // Pass socket to game component
                     roomId={currentRoomId}
                     playerType={playerType}
-                    isPremium={isPremium}
+                    isPremium={isPremium} 
                     lang={currentLang}
+                    onGameEnd={handleAdTrigger}
                 />
             );
         case 'game_adventure':
@@ -279,7 +378,10 @@ const App: React.FC = () => {
                     playerNames={playerNames}
                     levelConfig={config.levelConfig}
                     victoryDoodle={victoryDoodle}
-                    onBack={() => setView('adventure')}
+                    onBack={async () => {
+                        await handleAdTrigger();
+                        setView('adventure');
+                    }}
                     onLevelComplete={handleLevelComplete}
                     onScoreUpdate={handleScoreUpdate}
                     // Adventure usually has fixed modifiers, but let's allow theme
@@ -287,6 +389,15 @@ const App: React.FC = () => {
                     modifiers={{ coffeeSpill: false, sabotage: false, invisibleInk: false }}
                     isPremium={isPremium} 
                     lang={currentLang}
+                    onRetry={async () => {
+                        const allowed = retryAdventureLevel();
+                        if (allowed) {
+                            await handleAdTrigger();
+                            return true;
+                        }
+                        return false;
+                    }}
+                    onGameEnd={handleAdTrigger}
                 />
             );
         case 'adventure':
@@ -295,6 +406,10 @@ const App: React.FC = () => {
                     onBack={() => setView('menu')} 
                     onSelectLevel={startAdventureLevel} 
                     unlockedLevelCount={unlockedLevels}
+                    lives={lives}
+                    maxLives={isPremium ? MAX_LIVES_PREMIUM : MAX_LIVES_FREE}
+                    nextRefill={lastRefill + REFILL_INTERVAL}
+                    lang={currentLang}
                 />
             );
         case 'leaderboard':

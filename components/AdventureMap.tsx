@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 // Corrected imports: Replaced TargetIcon with BoltIcon which exists in the solid set.
-import { ArrowLeftIcon, LockClosedIcon, XMarkIcon, StarIcon, MapIcon, FireIcon, BeakerIcon, PencilIcon, FlagIcon, BoltIcon, ShieldCheckIcon } from '@heroicons/react/24/solid';
+import { ArrowLeftIcon, LockClosedIcon, XMarkIcon, StarIcon, MapIcon, FireIcon, BeakerIcon, PencilIcon, FlagIcon, BoltIcon, ShieldCheckIcon, HeartIcon } from '@heroicons/react/24/solid';
+import { t, LanguageCode } from '../src/lib/i18n';
 
 export type ChallengeType = 'CAPTURE' | 'PATH' | 'ASSASSIN' | 'SURVIVE';
 
@@ -27,6 +28,10 @@ interface AdventureMapProps {
   onBack: () => void;
   onSelectLevel: (config: LevelConfig) => void;
   unlockedLevelCount: number;
+  lives: number;
+  maxLives: number;
+  nextRefill: number;
+  lang: LanguageCode;
 }
 
 const LEVELS: LevelConfig[] = [
@@ -81,9 +86,43 @@ const CHAPTERS = [
     { id: 4, name: "The Dragon's Lair", icon: FireIcon, color: "text-red-500", bg: "bg-red-50" },
 ];
 
-export const AdventureMap: React.FC<AdventureMapProps> = ({ onBack, onSelectLevel, unlockedLevelCount }) => {
+export const AdventureMap: React.FC<AdventureMapProps> = ({ 
+    onBack, 
+    onSelectLevel, 
+    unlockedLevelCount,
+    lives,
+    maxLives,
+    nextRefill,
+    lang
+}) => {
   const [selectedLevel, setSelectedLevel] = useState<LevelConfig | null>(null);
   const [activeChapter, setActiveChapter] = useState(1);
+  const [timeLeft, setTimeLeft] = useState<string>('');
+
+  // Countdown timer for refill
+  useEffect(() => {
+      if (lives >= maxLives) {
+          setTimeLeft('');
+          return;
+      }
+      
+      const updateTimer = () => {
+          const now = Date.now();
+          const diff = nextRefill - now;
+          if (diff <= 0) {
+              setTimeLeft('00:00:00'); 
+          } else {
+              const h = Math.floor(diff / (1000 * 60 * 60));
+              const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+              const s = Math.floor((diff % (1000 * 60)) / 1000);
+              setTimeLeft(`${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+          }
+      };
+
+      updateTimer();
+      const interval = setInterval(updateTimer, 1000);
+      return () => clearInterval(interval);
+  }, [lives, maxLives, nextRefill]);
 
   const filteredLevels = useMemo(() => 
     LEVELS.filter(l => l.chapter === activeChapter), 
@@ -108,18 +147,35 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({ onBack, onSelectLeve
             <ArrowLeftIcon className="w-6 h-6 text-zinc-700" />
         </button>
         <div className="text-center">
-            <h2 className="font-hand text-4xl font-bold text-zinc-800 tracking-tight">Adventure</h2>
-            <div className="flex items-center justify-center gap-2 mt-1">
-                <div className="h-2 w-32 bg-zinc-200 rounded-full overflow-hidden border border-zinc-800">
-                    <div 
-                        className="h-full bg-blue-500 transition-all duration-1000" 
-                        style={{ width: `${(unlockedLevelCount / LEVELS.length) * 100}%` }}
-                    ></div>
+            <h2 className="font-hand text-4xl font-bold text-zinc-800 tracking-tight">{t('menu_adventure', lang)}</h2>
+            <div className="flex items-center justify-center gap-4 mt-1">
+                {/* Progress */}
+                <div className="flex items-center gap-2">
+                    <div className="h-2 w-24 bg-zinc-200 rounded-full overflow-hidden border border-zinc-800">
+                        <div 
+                            className="h-full bg-blue-500 transition-all duration-1000" 
+                            style={{ width: `${(unlockedLevelCount / LEVELS.length) * 100}%` }}
+                        ></div>
+                    </div>
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">
+                        {unlockedLevelCount} / {LEVELS.length}
+                    </span>
                 </div>
-                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">
-                    {unlockedLevelCount} / {LEVELS.length} Pages
-                </span>
+
+                {/* Lives */}
+                <div className="flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
+                    <HeartIcon className="w-4 h-4 text-red-500 animate-pulse" />
+                    <span className={`font-hand font-bold text-sm ${lives === 0 ? 'text-red-600' : 'text-zinc-700'}`}>
+                        {lives}/{maxLives}
+                    </span>
+                </div>
             </div>
+            {/* Refill Timer */}
+            {lives < maxLives && timeLeft && (
+                <div className="text-[10px] text-zinc-400 font-bold mt-1">
+                    {t('adventure_refill_in', lang)} {timeLeft}
+                </div>
+            )}
         </div>
         <div className="w-10"></div>
       </div>
@@ -228,9 +284,20 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({ onBack, onSelectLeve
                   </div>
 
                   <div className="p-6 bg-zinc-50 border-t-2 border-zinc-800">
+                      {lives <= 0 && (
+                        <div className="mb-4 p-3 bg-red-50 border-2 border-red-100 rounded-xl text-center">
+                            <p className="font-hand font-bold text-red-500 text-sm mb-1">{t('adventure_no_lives', lang)}</p>
+                            <p className="font-hand font-bold text-zinc-400 text-xs">{t('adventure_refill_in', lang)} {timeLeft}</p>
+                        </div>
+                      )}
                       <button 
                         onClick={() => onSelectLevel(selectedLevel)}
-                        className="w-full sketch-button bg-blue-500 hover:bg-blue-600 text-white py-5 font-hand font-black text-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all rounded-2xl"
+                        disabled={lives <= 0}
+                        className={`w-full sketch-button py-5 font-hand font-black text-2xl transition-all rounded-2xl
+                            ${lives > 0 
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none' 
+                            : 'bg-zinc-200 text-zinc-400 cursor-not-allowed shadow-none'}
+                        `}
                       >
                           Start Battle!
                       </button>

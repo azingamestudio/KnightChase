@@ -7,7 +7,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowPathIcon, HomeIcon, ShareIcon, FaceSmileIcon, FireIcon, HandThumbDownIcon, HandThumbUpIcon, TrashIcon, GiftIcon, BoltIcon, SparklesIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { LevelConfig } from './AdventureMap';
 import { PlayerNames, GameTheme, GameModifiers } from '../App';
-import { AdMob, AdOptions, AdLoadInfo } from '@capacitor-community/admob';
 import { playSFX } from '../src/lib/audio';
 import { t, LanguageCode } from '../src/lib/i18n';
 
@@ -43,6 +42,8 @@ interface GameProps {
   roomId?: string; // Room ID for online play
   playerType?: Player; // 'p1' or 'p2' for online play
   lang: LanguageCode;
+  onRetry?: () => Promise<boolean> | boolean;
+  onGameEnd?: () => Promise<void>;
 }
 
 const BOARD_SIZE = 8;
@@ -126,7 +127,8 @@ const PlayerIcon = ({ skin = 'knight', customSkin, color }: { skin: string, cust
     if (skin === 'ghost') {
         return <svg viewBox="0 0 24 24" fill={color} className="w-full h-full drop-shadow-md"><path d="M12 2C7 2 4 6 4 11v6l3-2 2 2 3-2 3 2 2-2 3 2v-6c0-5-3-9-8-9z" stroke="currentColor" strokeWidth="1.5"/><circle cx="9" cy="10" r="1.5" fill="white"/><circle cx="15" cy="10" r="1.5" fill="white"/></svg>;
     }
-    return <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full drop-shadow-md" style={{color}}><g stroke="currentColor" strokeWidth="1.5"><path d="M17 8C17 10.5 15.5 12.5 13 13L13 18H15V20H9V18H11L11 13C8.5 12.5 7 10.5 7 8C7 6 8 4 10 3C11 2.5 13 2 14 2C16 2 17 4 17 8Z" fill={color}/> <path d="M10 6C9.5 6 9 6.5 9 7C9 7.5 9.5 8 10 8C10.5 8 11 7.5 11 7C11 6.5 10.5 6 10 6Z" fill="white"/></g></svg>;
+    // Default 'knight' skin - now using blue.png
+    return <img src="/blue.png" alt="Player 1" className="w-full h-full object-contain drop-shadow-md" />;
 };
 
 export const KnightChaseGame: React.FC<GameProps> = ({
@@ -146,7 +148,9 @@ export const KnightChaseGame: React.FC<GameProps> = ({
     socket,
     roomId,
     playerType,
-    lang
+    lang,
+    onRetry,
+    onGameEnd
 }) => {
   const initialP1 = levelConfig ? levelConfig.p1Start : { x: 0, y: 0 };
   const initialP2 = levelConfig ? levelConfig.p2Start : { x: 7, y: 7 };
@@ -179,24 +183,6 @@ export const KnightChaseGame: React.FC<GameProps> = ({
 
   const [oppName] = useState(mode === 'online' ? `Guest_${Math.floor(Math.random() * 999)}` : (mode === 'pvp' ? playerNames.p2 : playerNames.ai));
   const [chatMsg, setChatMsg] = useState<string | null>(null);
-
-  // Bileşen içine bir yardımcı fonksiyon ekleyin
-  const showInterstitial = async () => {
-      // Test ID (Interstitial) - Canlıda kendi ID'nizi kullanın
-      const adId = 'ca-app-pub-3940256099942544/1033173712';
-      
-      const options: AdOptions = {
-          adId: adId,
-          isTesting: true // Canlıda false yapın
-      };
-
-      try {
-          await AdMob.prepareInterstitial(options);
-          await AdMob.showInterstitial();
-      } catch (e) {
-          console.error('Interstitial hatası:', e);
-      }
-  };
 
   // --- LOGIC FOR COFFEE SPILL (Feature 2) ---
   useEffect(() => {
@@ -273,8 +259,13 @@ export const KnightChaseGame: React.FC<GameProps> = ({
   };
 
   const handlePlayAgain = async () => {
-    if (!isPremium) {
-        await showInterstitial();
+    if (mode === 'adventure' && onRetry) {
+        const allowed = await onRetry();
+        if (!allowed) return; 
+    }
+
+    if (onGameEnd) {
+        await onGameEnd();
     }
 
     // Online Sync: Reset game for opponent too
@@ -679,7 +670,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
             )}
             {isP2 && (
                 <div className="relative w-4/5 h-4/5 transition-all duration-300 drop-shadow-md z-10 text-red-500">
-                     <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 2L15 8L21 9L17 14L18 20L12 17L6 20L7 14L3 9L9 8L12 2Z" stroke="currentColor" strokeWidth="1.5"/></svg>
+                     <img src="/red.png" alt="Player 2" className="w-full h-full object-contain" />
                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-hand font-bold bg-white px-1.5 py-0.5 rounded border border-zinc-200 shadow-sm text-black">{oppName}</div>
                      {chatMsg && ( <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white border border-zinc-800 rounded p-1.5 text-[9px] whitespace-nowrap shadow-md font-hand z-20 animate-in zoom-in duration-200 text-black">{chatMsg}</div> )}
                 </div>
