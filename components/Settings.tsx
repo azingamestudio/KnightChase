@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React, { useRef, useState } from 'react';
-import { ArrowLeftIcon, MusicalNoteIcon, SpeakerWaveIcon, UserIcon, PencilSquareIcon, SwatchIcon, BeakerIcon, InformationCircleIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, MusicalNoteIcon, SpeakerWaveIcon, UserIcon, PencilSquareIcon, SwatchIcon, BeakerIcon, InformationCircleIcon, LockClosedIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import { PlayerNames, GameTheme, GameModifiers } from '../App';
 import { setSFXVolume, setMusicVolume } from '../src/lib/audio';
 import { DoodleCanvas } from './DoodleCanvas';
 import { registerUser } from '../src/lib/api';
+import { t, LanguageCode } from '../src/lib/i18n';
 
 interface SettingsProps {
   onBack: () => void;
@@ -29,6 +30,8 @@ interface SettingsProps {
   onBuyPremium: () => void;
   onRestorePurchases: () => void;
   onDebugTogglePremium: () => void; // For testing
+  lang: LanguageCode;
+  onLanguageChange: (lang: LanguageCode) => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
@@ -48,7 +51,9 @@ export const Settings: React.FC<SettingsProps> = ({
     isPremium,
     onBuyPremium,
     onRestorePurchases,
-    onDebugTogglePremium
+    onDebugTogglePremium,
+    lang,
+    onLanguageChange
 }) => {
   const [musicVolume, setMusicVolumeState] = useState(1);
   const [sfxVolume, setSfxVolumeState] = useState(1);
@@ -86,6 +91,16 @@ export const Settings: React.FC<SettingsProps> = ({
       { id: 'chalk', name: 'Chalkboard', color: '#27272a', premium: true } // Premium
   ];
 
+  const languages: { code: LanguageCode, name: string, flag: string }[] = [
+      { code: 'en', name: 'English', flag: '🇬🇧' },
+      { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
+      { code: 'ar', name: 'العربية', flag: '🇸🇦' },
+      { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+      { code: 'es', name: 'Español', flag: '🇪🇸' },
+      { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+      { code: 'ru', name: 'Русский', flag: '🇷🇺' }
+  ];
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (file) {
@@ -117,7 +132,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <button onClick={onBack} className="p-2 -ml-2 hover:bg-zinc-100 rounded-full">
             <ArrowLeftIcon className="w-6 h-6" />
         </button>
-        <h2 className="font-hand text-3xl font-bold">Settings</h2>
+        <h2 className="font-hand text-3xl font-bold">{t('settings_title', lang)}</h2>
         <div className="w-10"></div>
       </div>
 
@@ -126,18 +141,18 @@ export const Settings: React.FC<SettingsProps> = ({
         {/* Premium Status & Debug */}
         <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200">
             <div className="flex items-center justify-between mb-2">
-                <span className="font-hand font-bold text-lg">Premium Status:</span>
+                <span className="font-hand font-bold text-lg">{t('settings_premium_status', lang)}</span>
                 <span className={`font-hand font-bold ${isPremium ? 'text-green-600' : 'text-zinc-500'}`}>
-                    {isPremium ? 'ACTIVE 👑' : 'Free Plan'}
+                    {isPremium ? t('settings_active', lang) : t('settings_free_plan', lang)}
                 </span>
             </div>
             {!isPremium && (
                 <button onClick={onBuyPremium} className="w-full sketch-button py-2 bg-yellow-400 hover:bg-yellow-500 mb-2">
-                    <span className="font-hand font-bold text-white">Unlock Premium</span>
+                    <span className="font-hand font-bold text-white">{t('menu_unlock_premium', lang)}</span>
                 </button>
             )}
             <button onClick={onRestorePurchases} className="w-full text-xs text-zinc-500 underline mb-4">
-                Restore Purchases
+                {t('settings_restore_purchases', lang)}
             </button>
             
             {/* Developer Debug Area - Remove in production if desired, or keep hidden */}
@@ -152,15 +167,39 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
         </div>
 
+        {/* Language Settings */}
+        <div className="sketch-border bg-white p-6">
+            <div className="flex items-center space-x-3 mb-4">
+                <GlobeAltIcon className="w-6 h-6 text-zinc-600" />
+                <span className="font-hand text-xl font-bold text-zinc-800">{t('settings_language', lang)}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                {languages.map((l) => (
+                    <button
+                        key={l.code}
+                        onClick={() => onLanguageChange(l.code)}
+                        className={`p-3 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
+                            lang === l.code 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold shadow-sm' 
+                            : 'border-zinc-200 hover:border-zinc-300 text-zinc-600'
+                        }`}
+                    >
+                        <span className="text-xl">{l.flag}</span>
+                        <span className="font-hand">{l.name}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+
         {/* Audio Settings */}
         <div className="sketch-border bg-white p-6">
             <div className="flex items-center space-x-3 mb-4">
                 <SpeakerWaveIcon className="w-6 h-6 text-zinc-600" />
-                <span className="font-hand text-xl font-bold text-zinc-800">Volume</span>
+                <span className="font-hand text-xl font-bold text-zinc-800">{t('settings_volume', lang)}</span>
             </div>
             <div className="space-y-4">
                 <div>
-                    <label htmlFor="music-volume" className="block font-hand text-sm font-bold text-zinc-700 mb-2">Music Volume</label>
+                    <label htmlFor="music-volume" className="block font-hand text-sm font-bold text-zinc-700 mb-2">{t('settings_music_volume', lang)}</label>
                     <input
                         id="music-volume"
                         type="range"
@@ -177,7 +216,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     />
                 </div>
                 <div>
-                    <label htmlFor="sfx-volume" className="block font-hand text-sm font-bold text-zinc-700 mb-2">SFX Volume</label>
+                    <label htmlFor="sfx-volume" className="block font-hand text-sm font-bold text-zinc-700 mb-2">{t('settings_sfx_volume', lang)}</label>
                     <input
                         id="sfx-volume"
                         type="range"

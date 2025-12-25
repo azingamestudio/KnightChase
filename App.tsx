@@ -15,6 +15,7 @@ import { initializeAdMob, showBannerAd, hideBannerAd } from './src/lib/admob';
 import { initializeStore, registerPremiumListener, purchasePremium, restorePurchases } from './src/lib/store';
 import { io, Socket } from 'socket.io-client';
 import { API_URL, SOCKET_URL, registerUser, submitScore } from './src/lib/api';
+import { getLanguage, setLanguage, LanguageCode } from './src/lib/i18n';
 
 type View = 'menu' | 'ai_select' | 'game_pvp' | 'game_ai' | 'game_adventure' | 'game_online' | 'adventure' | 'online_lobby' | 'leaderboard' | 'settings';
 
@@ -49,6 +50,12 @@ const App: React.FC = () => {
   const [config, setConfig] = useState<GameConfig>({ mode: 'ai', difficulty: 'medium' });
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [isMutedState, setIsMutedState] = useState<boolean>(getIsMuted());
+  const [currentLang, setCurrentLang] = useState<LanguageCode>(getLanguage());
+
+  const changeLanguage = (lang: LanguageCode) => {
+      setLanguage(lang);
+      setCurrentLang(lang);
+  };
 
   // Initialization Effect
   useEffect(() => {
@@ -215,7 +222,7 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (view) {
         case 'menu':
-            return <MainMenu onNavigate={handleNavigate} isPremium={isPremium} onBuyPremium={purchasePremium} />;
+            return <MainMenu onNavigate={handleNavigate} isPremium={isPremium} onBuyPremium={purchasePremium} lang={currentLang} />;
         case 'ai_select':
             return (
                 <div className="flex flex-col items-center justify-center min-h-screen p-6 space-y-6 animate-in fade-in zoom-in duration-300">
@@ -260,6 +267,7 @@ const App: React.FC = () => {
                     roomId={currentRoomId}
                     playerType={playerType}
                     isPremium={isPremium}
+                    lang={currentLang}
                 />
             );
         case 'game_adventure':
@@ -278,6 +286,7 @@ const App: React.FC = () => {
                     theme={gameTheme}
                     modifiers={{ coffeeSpill: false, sabotage: false, invisibleInk: false }}
                     isPremium={isPremium} 
+                    lang={currentLang}
                 />
             );
         case 'adventure':
@@ -289,7 +298,7 @@ const App: React.FC = () => {
                 />
             );
         case 'leaderboard':
-            return <Leaderboard onBack={() => setView('menu')} currentScore={playerScore} playerName={playerNames.p1} />;
+            return <Leaderboard onBack={() => setView('menu')} currentScore={playerScore} playerName={playerNames.p1} lang={currentLang} />;
         case 'settings':
             return (
                 <Settings 
@@ -311,6 +320,8 @@ const App: React.FC = () => {
                     onBuyPremium={purchasePremium}
                     onRestorePurchases={restorePurchases}
                     onDebugTogglePremium={() => setIsPremium(!isPremium)}
+                    lang={currentLang}
+                    onLanguageChange={changeLanguage}
                 />
             );
         case 'online_lobby':

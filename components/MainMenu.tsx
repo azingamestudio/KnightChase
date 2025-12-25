@@ -5,11 +5,13 @@
 import React from 'react';
 import { UserGroupIcon, PaperAirplaneIcon, MapIcon, GlobeAltIcon, TrophyIcon, Cog6ToothIcon, StarIcon } from '@heroicons/react/24/outline';
 import { playMusic } from '../src/lib/audio';
+import { t, LanguageCode } from '../src/lib/i18n';
 
 interface MainMenuProps {
   onNavigate: (view: string) => void;
   isPremium: boolean;
   onBuyPremium: () => void;
+  lang: LanguageCode;
 }
 
 
@@ -43,7 +45,7 @@ const MenuButton = ({
     </button>
 );
 
-export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuyPremium }) => {
+export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuyPremium, lang }) => {
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
       <div className="flex flex-col items-center w-full max-w-sm mx-auto px-4 py-8 min-h-screen justify-center">
@@ -59,7 +61,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
             onClick={() => { playMusic('sfx_bg.mp3'); onNavigate('ai_select'); }} 
             colorClass="btn-gray" 
             icon={PaperAirplaneIcon} 
-            title="AI Training" 
+            title={t('menu_ai_training', lang)} 
             delay={0}
         />
         
@@ -67,7 +69,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
             onClick={() => { playMusic('sfx_bg.mp3'); onNavigate('game_pvp'); }} 
             colorClass="btn-green" 
             icon={UserGroupIcon} 
-            title="Duel - Pass & Play" 
+            title={t('menu_duel', lang)} 
             delay={100}
         />
 
@@ -75,7 +77,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
             onClick={() => { playMusic('sfx_bg.mp3'); onNavigate('adventure'); }} 
             colorClass="btn-danger" 
             icon={MapIcon} 
-            title="Adventure" 
+            title={t('menu_adventure', lang)} 
             delay={200}
         />
 
@@ -83,7 +85,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
             onClick={() => { playMusic('sfx_bg.mp3'); onNavigate('online'); }} 
             colorClass="btn-purple" 
             icon={GlobeAltIcon} 
-            title="Play Online" 
+            title={t('menu_online', lang)} 
             delay={300}
         />
 
@@ -92,7 +94,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
                 onClick={() => { playMusic('sfx_bg.mp3'); onNavigate('leaderboard'); }} 
                 colorClass="btn-yellow" 
                 icon={TrophyIcon} 
-                title="Rankings" 
+                title={t('menu_rankings', lang)} 
                 delay={400}
             />
 
@@ -100,7 +102,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
                 onClick={() => { playMusic('sfx_bg.mp3'); onNavigate('settings'); }} 
                 colorClass="btn-gray" 
                 icon={Cog6ToothIcon} 
-                title="Settings" 
+                title={t('menu_settings', lang)} 
                 delay={500}
             />
         </div>
@@ -112,8 +114,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
                 style={{ animationDelay: '600ms' }}
             >
                 <div className="flex flex-col items-start">
-                    <span className="font-hand text-xl font-bold text-white drop-shadow-md">Unlock Premium 👑</span>
-                    <span className="font-hand text-xs text-yellow-100">Remove Ads & Unlock All Skins</span>
+                    <span className="font-hand text-xl font-bold text-white drop-shadow-md">{t('menu_unlock_premium', lang)}</span>
+                    <span className="font-hand text-xs text-yellow-100">{t('menu_remove_ads', lang)}</span>
                 </div>
                 <StarIcon className="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-300 animate-pulse" />
             </button>
