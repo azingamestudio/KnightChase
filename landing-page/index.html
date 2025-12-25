@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knight Chase - The Notebook Battle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Permanent+Marker&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Paper Texture Overlay -->
+    <div class="paper-texture"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">Knight Chase</div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#gameplay">Gameplay</a>
+            <a href="#download" class="btn-nav">Get the App</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">The Ultimate<br><span class="highlight">Doodle Battle</span></h1>
+            <p class="hero-subtitle">Outsmart your rivals in this turn-based strategy game played entirely on a digital notebook.</p>
+            <div class="hero-buttons">
+                <a href="#download" class="btn btn-primary">
+                    <i class="fab fa-google-play"></i> Download for Android
+                </a>
+                <a href="#features" class="btn btn-secondary">
+                    Learn More
+                </a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="phone-mockup">
+                <div class="screen">
+                    <div class="game-demo">
+                        <div class="knight-piece">♞</div>
+                        <div class="target-piece">⭐</div>
+                        <div class="obstacle obs-1"></div>
+                        <div class="obstacle obs-2"></div>
+                        <div class="path-line"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="doodle-decor star-1">☆</div>
+            <div class="doodle-decor arrow-1">↝</div>
+            <div class="doodle-decor scribble-1"></div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <h2 class="section-title">Why You'll Love It</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon-circle">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3>Strategy First</h3>
+                <p>Think two steps ahead. Trap your opponent or race to the star. Every move counts in this chess-like puzzle.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-circle">
+                    <i class="fas fa-pencil-alt"></i>
+                </div>
+                <h3>Hand-Drawn Style</h3>
+                <p>Immerse yourself in a world of graph paper, ink blobs, and pencil sketches. It's nostalgia on your screen.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-circle">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Multiplayer Mayhem</h3>
+                <p>Challenge friends locally, play online against the world, or test your skills against our smart AI.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-circle">
+                    <i class="fas fa-coffee"></i>
+                </div>
+                <h3>Chaos Modes</h3>
+                <p>Spilled coffee? Invisible ink? Paper planes? Activate modifiers to turn the battlefield into chaos.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Showcase / Parallax Section -->
+    <section id="gameplay" class="showcase">
+        <div class="showcase-content">
+            <h2 class="section-title white">Master the Notebook</h2>
+            <p>From the margins of a math book to the coffee-stained desk, battle across unique environments.</p>
+            
+            <div class="stats-container">
+                <div class="stat-item">
+                    <span class="count">20+</span>
+                    <span class="label">Adventure Levels</span>
+                </div>
+                <div class="stat-item">
+                    <span class="count">4</span>
+                    <span class="label">Unique Themes</span>
+                </div>
+                <div class="stat-item">
+                    <span class="count">∞</span>
+                    <span class="label">Replay Value</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download-section">
+        <div class="download-container">
+            <h2 class="section-title">Ready to Chase?</h2>
+            <p>Join thousands of players in the ultimate notebook strategy game.</p>
+            <div class="store-buttons">
+                <button class="store-btn google">
+                    <i class="fab fa-google-play"></i>
+                    <div class="btn-text">
+                        <small>GET IT ON</small>
+                        <span>Google Play</span>
+                    </div>
+                </button>
+                <!-- Placeholder for iOS -->
+                <button class="store-btn apple disabled">
+                    <i class="fab fa-apple"></i>
+                    <div class="btn-text">
+                        <small>COMING SOON TO</small>
+                        <span>App Store</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+        <div class="doodle-decor spiral"></div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">Knight Chase</div>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-discord"></i></a>
+            </div>
+            <p class="copyright">&copy; 2024 Az in Game Studio. All rights reserved.</p>
+            <p class="credits">Made with <i class="fas fa-heart"></i> and lots of coffee.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

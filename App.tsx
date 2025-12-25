@@ -3,13 +3,18 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MainMenu } from './components/MainMenu';
 import { KnightChaseGame } from './components/KnightChaseGame';
 import { AdventureMap, LevelConfig } from './components/AdventureMap';
 import { Leaderboard } from './components/Leaderboard';
 import { Settings } from './components/Settings';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { playMusic, stopMusic, toggleMute, getIsMuted } from './src/lib/audio';
+import { initializeAdMob, showBannerAd, hideBannerAd } from './src/lib/admob';
+import { initializeStore, registerPremiumListener, purchasePremium, restorePurchases } from './src/lib/store';
+import { io, Socket } from 'socket.io-client';
+import { API_URL, SOCKET_URL, registerUser, submitScore } from './src/lib/api';
 
 type View = 'menu' | 'ai_select' | 'game_pvp' | 'game_ai' | 'game_adventure' | 'game_online' | 'adventure' | 'online_lobby' | 'leaderboard' | 'settings';
 
@@ -33,10 +38,52 @@ export type GameModifiers = {
     invisibleInk: boolean; // Feature 4
 };
 
+interface Room {
+  id: string;
+  players: number;
+  maxPlayers: number;
+}
+
 const App: React.FC = () => {
   const [view, setView] = useState<View>('menu');
   const [config, setConfig] = useState<GameConfig>({ mode: 'ai', difficulty: 'medium' });
-  
+  const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [isMutedState, setIsMutedState] = useState<boolean>(getIsMuted());
+
+  // Initialization Effect
+  useEffect(() => {
+    // Audio
+    setIsMutedState(getIsMuted());
+
+    // Initialize AdMob
+    initializeAdMob();
+
+    // Initialize Store (IAP)
+    initializeStore();
+
+    // Listen for Premium Status changes
+    registerPremiumListener((status) => {
+        setIsPremium(status);
+    });
+  }, []);
+
+  // AdMob Banner Management
+  useEffect(() => {
+      if (isPremium) {
+          hideBannerAd();
+      } else {
+          showBannerAd();
+      }
+  }, [isPremium]);
+
+  // Socket.IO State
+  const socketRef = useRef<Socket | null>(null);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
+  const [playerType, setPlayerType] = useState<'p1' | 'p2' | null>(null);
+
+
+
   // Global State
   const [playerSkin, setPlayerSkin] = useState<string>('knight');
   const [customSkin, setCustomSkin] = useState<string | null>(null);
@@ -68,6 +115,31 @@ const App: React.FC = () => {
         setView('ai_select');
     } else if (target === 'online') {
         setView('online_lobby');
+        // Connect to socket when entering online lobby
+        if (!socketRef.current) {
+          socketRef.current = io(SOCKET_URL, {
+            transports: ['websocket'], // Force websocket to avoid polling issues on mobile
+          });
+          socketRef.current.on('connect', () => {
+            console.log('Connected to socket.io server');
+          });
+          socketRef.current.on('disconnect', () => {
+            console.log('Disconnected from socket.io server');
+            setCurrentRoomId(null);
+            setPlayerType(null);
+          });
+          socketRef.current.on('roomList', (updatedRooms: Room[]) => {
+            setRooms(updatedRooms);
+          });
+          socketRef.current.on('playerJoined', (playerId: string) => {
+            console.log(`Player ${playerId} joined the room.`);
+            // Optionally update UI or game state
+          });
+          socketRef.current.on('playerLeft', (playerId: string) => {
+            console.log(`Player ${playerId} left the room.`);
+            // Optionally update UI or game state
+          });
+        }
     } else {
         setView(target as View);
     }
@@ -91,28 +163,58 @@ const App: React.FC = () => {
       setView('adventure');
   };
 
-  const handleScoreUpdate = (points: number) => {
-      setPlayerScore(prev => prev + points);
+  const handleScoreUpdate = (score: number, isWin: boolean) => {
+      setPlayerScore(prev => prev + score);
+      // If logged in/named, submit score
+      if (playerNames.p1 && playerNames.p1 !== 'Player 1') {
+          submitScore(playerNames.p1, score, isWin);
+      }
   };
 
-  // Simulate Online Matchmaking
+  const createRoom = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.emit('createRoom', (response: { success: boolean; roomId?: string }) => {
+        if (response.success && response.roomId) {
+          setCurrentRoomId(response.roomId);
+          setPlayerType('p1'); // Creator is P1
+          setConfig({ mode: 'online', difficulty: 'medium' }); // Default difficulty for online
+          setView('game_online');
+        } else {
+          console.error('Failed to create room');
+        }
+      });
+    }
+  }, []);
+
+  const joinRoom = useCallback((roomId: string) => {
+    if (socketRef.current) {
+      socketRef.current.emit('joinRoom', roomId, (response: { success: boolean; roomId?: string; message?: string }) => {
+        if (response.success && response.roomId) {
+          setCurrentRoomId(response.roomId);
+          setPlayerType('p2'); // Joiner is P2
+          setConfig({ mode: 'online', difficulty: 'medium' }); // Default difficulty for online
+          setView('game_online');
+        } else {
+          console.error('Failed to join room:', response.message);
+        }
+      });
+    }
+  }, []);
+
+  // Simulate Online Matchmaking (Removed, replaced by actual socket logic)
   useEffect(() => {
-      if (view === 'online_lobby') {
-          setOnlineStatus('Connecting to servers...');
-          const t1 = setTimeout(() => setOnlineStatus('Searching for opponent...'), 1500);
-          const t2 = setTimeout(() => setOnlineStatus('Opponent Found: ShadowKnight88'), 3500);
-          const t3 = setTimeout(() => {
-              setConfig({ mode: 'online', difficulty: 'hard' });
-              setView('game_online');
-          }, 4500);
-          return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+      if (view === 'online_lobby' && socketRef.current) {
+          setOnlineStatus('Waiting for rooms...');
+      } else if (view !== 'online_lobby' && view !== 'game_online' && socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
       }
   }, [view]);
 
   const renderView = () => {
     switch (view) {
         case 'menu':
-            return <MainMenu onNavigate={handleNavigate} />;
+            return <MainMenu onNavigate={handleNavigate} isPremium={isPremium} onBuyPremium={purchasePremium} />;
         case 'ai_select':
             return (
                 <div className="flex flex-col items-center justify-center min-h-screen p-6 space-y-6 animate-in fade-in zoom-in duration-300">
@@ -153,6 +255,10 @@ const App: React.FC = () => {
                     // New Props
                     theme={gameTheme}
                     modifiers={modifiers}
+                    socket={socketRef.current} // Pass socket to game component
+                    roomId={currentRoomId}
+                    playerType={playerType}
+                    isPremium={isPremium}
                 />
             );
         case 'game_adventure':
@@ -169,7 +275,8 @@ const App: React.FC = () => {
                     onScoreUpdate={handleScoreUpdate}
                     // Adventure usually has fixed modifiers, but let's allow theme
                     theme={gameTheme}
-                    modifiers={{ coffeeSpill: false, sabotage: false, invisibleInk: false }} 
+                    modifiers={{ coffeeSpill: false, sabotage: false, invisibleInk: false }}
+                    isPremium={isPremium} 
                 />
             );
         case 'adventure':
@@ -199,15 +306,57 @@ const App: React.FC = () => {
                     onThemeChange={setGameTheme}
                     modifiers={modifiers}
                     onModifiersChange={setModifiers}
+                    isPremium={isPremium}
+                    onBuyPremium={purchasePremium}
+                    onRestorePurchases={restorePurchases}
+                    onDebugTogglePremium={() => setIsPremium(!isPremium)}
                 />
             );
         case 'online_lobby':
             return (
                  <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
                      <h2 className="font-hand text-3xl font-bold mb-4">Online Multiplayer</h2>
-                     <p className="font-hand text-xl text-zinc-500 mb-8 animate-pulse">{onlineStatus}</p>
-                     <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                     <button onClick={() => setView('menu')} className="mt-12 text-zinc-400 hover:text-zinc-600 font-hand underline">Cancel</button>
+                     {currentRoomId ? (
+                       <div className="space-y-4">
+                         <p className="font-hand text-xl text-zinc-500">Oda ID: {currentRoomId}</p>
+                         <p className="font-hand text-xl text-zinc-500 animate-pulse">Rakip bekleniyor...</p>
+                         <button onClick={() => {
+                           if (socketRef.current && currentRoomId) {
+                             socketRef.current.emit('leaveRoom', currentRoomId, () => {
+                               setCurrentRoomId(null);
+                               setPlayerType(null);
+                               setView('menu');
+                             });
+                           } else {
+                             setCurrentRoomId(null);
+                             setPlayerType(null);
+                             setView('menu');
+                           }
+                         }} className="mt-4 text-zinc-400 hover:text-zinc-600 font-hand underline">Odadan Ayrıl</button>
+                       </div>
+                     ) : (
+                       <div className="space-y-4">
+                         <button onClick={createRoom} className="w-full sketch-button py-4 px-6 bg-blue-50 hover:bg-blue-100 flex items-center justify-center group">
+                             <span className="font-hand text-2xl font-bold">Oda Oluştur</span>
+                         </button>
+                         <h3 className="font-hand text-2xl font-bold mt-8 mb-4">Mevcut Odalar</h3>
+                         {rooms.length === 0 ? (
+                           <p className="font-hand text-xl text-zinc-500">Henüz oda yok. Bir oda oluşturun!</p>
+                         ) : (
+                           <ul className="space-y-2">
+                             {rooms.map(room => (
+                               <li key={room.id} className="flex justify-between items-center sketch-border p-4 bg-white/5">
+                                 <span className="font-hand text-xl">Oda: {room.id} ({room.players}/{room.maxPlayers})</span>
+                                 <button onClick={() => joinRoom(room.id)} disabled={room.players >= room.maxPlayers} className="sketch-button px-4 py-2 bg-green-50 hover:bg-green-100 font-hand text-lg">
+                                   Katıl
+                                 </button>
+                               </li>
+                             ))}
+                           </ul>
+                         )}
+                         <button onClick={() => setView('menu')} className="mt-12 text-zinc-400 hover:text-zinc-600 font-hand underline">Geri</button>
+                       </div>
+                     )}
                  </div>
             );
         default:
@@ -229,6 +378,21 @@ const App: React.FC = () => {
 
       <div className="relative z-10 w-full">
         {renderView()}
+      </div>
+
+      {/* Music Mute/Unmute Icon */}
+      <div
+        className="absolute bottom-4 left-4 z-20 cursor-pointer"
+        onClick={() => {
+          toggleMute();
+          setIsMutedState(getIsMuted());
+        }}
+      >
+        <img
+          src="/icon_footer_music.png"
+          alt="Music Toggle"
+          className={`h-10 transition-opacity duration-300 ${isMutedState ? 'opacity-30' : 'opacity-100'}`}
+        />
       </div>
     </div>
   );

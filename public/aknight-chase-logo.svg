@@ -1,0 +1,16 @@
+<svg width="600" height="300" viewBox="0 0 600 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Blue background -->
+  <rect x="0" y="0" width="300" height="300" fill="#4A90E2"/>
+  <!-- Red background -->
+  <rect x="300" y="0" width="300" height="300" fill="#E24A4A"/>
+
+  <!-- White diamond on blue side -->
+  <polygon points="150,70 170,90 150,110 130,90" fill="white"/>
+  <!-- White diamond on red side -->
+  <polygon points="450,70 470,90 450,110 430,90" fill="white"/>
+
+  <!-- KNIGHT text -->
+  <text x="150" y="180" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" alignment-baseline="middle">KNIGHT</text>
+  <!-- CHASE text -->
+  <text x="150" y="240" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" alignment-baseline="middle">CHASE</text>
+</svg>

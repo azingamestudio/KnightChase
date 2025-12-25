@@ -7,6 +7,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowPathIcon, HomeIcon, ShareIcon, FaceSmileIcon, FireIcon, HandThumbDownIcon, HandThumbUpIcon, TrashIcon, GiftIcon, BoltIcon, SparklesIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { LevelConfig } from './AdventureMap';
 import { PlayerNames, GameTheme, GameModifiers } from '../App';
+import { AdMob, AdOptions, AdLoadInfo } from '@capacitor-community/admob';
+import { playSFX } from '../src/lib/audio';
 
 type Player = 'p1' | 'p2';
 type Position = { x: number; y: number };
@@ -33,9 +35,12 @@ interface GameProps {
   onBack: () => void;
   onLevelComplete?: () => void;
   onScoreUpdate: (points: number) => void;
-  
+  isPremium: boolean;
   theme: GameTheme;
   modifiers: GameModifiers;
+  socket?: any; // Socket.IO socket instance
+  roomId?: string; // Room ID for online play
+  playerType?: Player; // 'p1' or 'p2' for online play
 }
 
 const BOARD_SIZE = 8;
@@ -122,9 +127,9 @@ const PlayerIcon = ({ skin = 'knight', customSkin, color }: { skin: string, cust
     return <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full drop-shadow-md" style={{color}}><g stroke="currentColor" strokeWidth="1.5"><path d="M17 8C17 10.5 15.5 12.5 13 13L13 18H15V20H9V18H11L11 13C8.5 12.5 7 10.5 7 8C7 6 8 4 10 3C11 2.5 13 2 14 2C16 2 17 4 17 8Z" fill={color}/> <path d="M10 6C9.5 6 9 6.5 9 7C9 7.5 9.5 8 10 8C10.5 8 11 7.5 11 7C11 6.5 10.5 6 10 6Z" fill="white"/></g></svg>;
 };
 
-export const KnightChaseGame: React.FC<GameProps> = ({ 
-    mode, 
-    difficulty = 'medium', 
+export const KnightChaseGame: React.FC<GameProps> = ({
+    mode,
+    difficulty = 'medium',
     playerSkin = 'knight',
     customSkin,
     playerNames,
@@ -133,8 +138,12 @@ export const KnightChaseGame: React.FC<GameProps> = ({
     onBack,
     onLevelComplete,
     onScoreUpdate,
+    isPremium,
     theme,
-    modifiers
+    modifiers,
+    socket,
+    roomId,
+    playerType
 }) => {
   const initialP1 = levelConfig ? levelConfig.p1Start : { x: 0, y: 0 };
   const initialP2 = levelConfig ? levelConfig.p2Start : { x: 7, y: 7 };
@@ -142,6 +151,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
   const activeDifficulty = levelConfig ? levelConfig.difficulty : difficulty;
 
   const [p1Pos, setP1Pos] = useState<Position>(initialP1);
+  const [isConnected, setIsConnected] = useState(true);
   const [p2Pos, setP2Pos] = useState<Position>(initialP2);
   const [blocked, setBlocked] = useState<Set<string>>(initialBlocked);
   const [turn, setTurn] = useState<Player>('p1');
@@ -149,6 +159,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
   const [winner, setWinner] = useState<Player | null>(null);
   const [winReason, setWinReason] = useState<string>('');
   const [scoreProcessed, setScoreProcessed] = useState(false);
+  const [isGameStarted, setIsGameStarted] = useState(false);
   
   // Feature States
   const [stickers, setStickers] = useState<Sticker[]>([]);
@@ -165,6 +176,24 @@ export const KnightChaseGame: React.FC<GameProps> = ({
 
   const [oppName] = useState(mode === 'online' ? `Guest_${Math.floor(Math.random() * 999)}` : (mode === 'pvp' ? playerNames.p2 : playerNames.ai));
   const [chatMsg, setChatMsg] = useState<string | null>(null);
+
+  // Bileşen içine bir yardımcı fonksiyon ekleyin
+  const showInterstitial = async () => {
+      // Test ID (Interstitial) - Canlıda kendi ID'nizi kullanın
+      const adId = 'ca-app-pub-3940256099942544/1033173712';
+      
+      const options: AdOptions = {
+          adId: adId,
+          isTesting: true // Canlıda false yapın
+      };
+
+      try {
+          await AdMob.prepareInterstitial(options);
+          await AdMob.showInterstitial();
+      } catch (e) {
+          console.error('Interstitial hatası:', e);
+      }
+  };
 
   // --- LOGIC FOR COFFEE SPILL (Feature 2) ---
   useEffect(() => {
@@ -222,6 +251,13 @@ export const KnightChaseGame: React.FC<GameProps> = ({
         setPowerUpMessage(null);
         setP1Sabotage(0);
     }, 300);
+  };
+
+  const handlePlayAgain = async () => {
+    if (!isPremium) {
+        await showInterstitialAd();
+    }
+    resetGame();
   };
 
   const checkWin = useCallback((currentP1: Position, currentP2: Position, currentBlocked: Set<string>, currentTurn: Player, isTeleporting: boolean) => {
@@ -295,7 +331,32 @@ export const KnightChaseGame: React.FC<GameProps> = ({
 
   const makeMove = async (target: Position) => {
     if (winner) return;
+    playSFX('sfx_pencil.mp3');
     const currentPos = turn === 'p1' ? p1Pos : p2Pos;
+
+    if (mode === 'online' && socket && roomId && playerType) {
+      if (playerType !== turn) {
+        console.log("It's not your turn!");
+        return;
+      }
+      const newBlocked = new Set(blocked);
+      newBlocked.add(`${currentPos.x},${currentPos.y}`);
+      const newGameState = {
+        p1Pos: turn === 'p1' ? target : p1Pos,
+        p2Pos: turn === 'p2' ? target : p2Pos,
+        blocked: Array.from(newBlocked),
+        turn: (turn === 'p1' ? 'p2' : 'p1'), // Turn always switches in online mode
+        turnCount: turnCount + 1,
+        winner: null,
+        winReason: '',
+        mysteryPos: mysteryPos,
+        activePowerUp: activePowerUp,
+        powerUpMessage: powerUpMessage,
+        p1Sabotage: p1Sabotage,
+      };
+      socket.emit('gameMove', { roomId, fromPosition: currentPos, toPosition: target, playerTurn: playerType, newGameState });
+      return; // Sunucudan gelen güncellemeyi bekleyeceğiz
+    }
     
     // Sabotage Gain
     if (turn === 'p1' && modifiers.sabotage) {
@@ -348,21 +409,81 @@ export const KnightChaseGame: React.FC<GameProps> = ({
     }
   };
 
-  // AI Loop
+  // Online oyun için socket olaylarını dinle
   useEffect(() => {
+    if (mode === 'online' && socket && roomId && playerType) {
+      socket.on('gameMove', ({ newGameState }: { newGameState: any }) => {
+        console.log('Received gameMove with newGameState:', newGameState);
+        // Sunucudan gelen tüm oyun durumunu güncelle
+        setP1Pos(newGameState.p1Pos);
+        setP2Pos(newGameState.p2Pos);
+        setBlocked(new Set(newGameState.blocked));
+        setTurn(newGameState.turn);
+        setTurnCount(newGameState.turnCount);
+        setWinner(newGameState.winner);
+        setWinReason(newGameState.winReason);
+        setMysteryPos(newGameState.mysteryPos);
+        setActivePowerUp(newGameState.activePowerUp);
+        setPowerUpMessage(newGameState.powerUpMessage);
+        setP1Sabotage(newGameState.p1Sabotage);
+      });
+
+      socket.on('gameStateUpdate', (gameState: any) => {
+        console.log('Received gameStateUpdate:', gameState);
+        // Sunucudan gelen tüm oyun durumunu güncelle
+        setP1Pos(gameState.p1Pos);
+        setP2Pos(gameState.p2Pos);
+        setBlocked(new Set(gameState.blocked));
+        setTurn(gameState.turn);
+        setTurnCount(gameState.turnCount);
+        setWinner(gameState.winner);
+        setWinReason(gameState.winReason);
+        setMysteryPos(gameState.mysteryPos);
+        setActivePowerUp(gameState.activePowerUp);
+        setPowerUpMessage(gameState.powerUpMessage);
+        setP1Sabotage(gameState.p1Sabotage);
+        setIsGameStarted(true); // Game has started once initial state is received
+      });
+
+      return () => {
+        socket.off('gameMove');
+        socket.off('gameStateUpdate');
+      };
+    }
+  }, [mode, socket, roomId, playerType]);
+
+  // Handle socket connection/disconnection
+  useEffect(() => {
+    if (mode === 'online' && socket) {
+      socket.on('disconnect', () => {
+        setIsConnected(false);
+        setWinReason('Connection Lost! Reconnecting...');
+      });
+
+      socket.on('connect', () => {
+        setIsConnected(true);
+        setWinReason(''); // Clear message on reconnect
+      });
+
+      return () => {
+        socket.off('disconnect');
+        socket.off('connect');
+      };
+    }
+  }, [mode, socket]);
+
+  // AI Loop (Online modda devre dışı bırak)
+  useEffect(() => {
+    if (mode === 'online') return; // Online modda AI'yı devre dışı bırak
+
     const isOpponentTurn = turn === 'p2';
-    const isAI = mode === 'ai' || mode === 'adventure' || mode === 'online';
+    const isAI = mode === 'ai' || mode === 'adventure'; // Online mod kaldırıldı
 
     if (isAI && isOpponentTurn && !winner) {
-      const delay = mode === 'online' ? 1500 + Math.random() * 1000 : 800;
-      if (mode === 'online' && Math.random() > 0.85 && !chatMsg) {
-          const messages = ["Nice move...", "Thinking...", "Hmm...", "Watch this!"];
-          setChatMsg(messages[Math.floor(Math.random() * messages.length)]);
-          setTimeout(() => setChatMsg(null), 2000);
-      }
+      const delay = 800; // Online mod için gecikme kaldırıldı
 
       const timer = setTimeout(() => {
-        const diff = mode === 'online' ? 'hard' : activeDifficulty;
+        const diff = activeDifficulty; // Online mod için zorluk kaldırıldı
         const isTeleporting = activePowerUp?.player === 'p2' && activePowerUp?.type === 'teleport';
         const move = getAIMove(p2Pos, p1Pos, blocked, diff, isTeleporting);
         if (move) makeMove(move);
@@ -372,7 +493,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
       }, delay); 
       return () => clearTimeout(timer);
     }
-  }, [turn, mode, winner, p2Pos, p1Pos, blocked, activeDifficulty, checkWin, chatMsg, activePowerUp]);
+  }, [turn, mode, winner, p2Pos, p1Pos, blocked, activeDifficulty, checkWin, activePowerUp]);
 
   const addSticker = (emoji: string) => {
       const id = Date.now();
@@ -388,15 +509,17 @@ export const KnightChaseGame: React.FC<GameProps> = ({
     const isP2 = p2Pos.x === x && p2Pos.y === y;
     const isBlocked = blocked.has(`${x},${y}`);
     const isMystery = mysteryPos && mysteryPos.x === x && mysteryPos.y === y;
+
+
     
     const p1HasTeleport = activePowerUp?.player === 'p1' && activePowerUp?.type === 'teleport';
-    const isLegal = !winner && turn === 'p1' && isValidMove(p1Pos, {x, y}, blocked, !!p1HasTeleport);
-    const p2HasTeleport = activePowerUp?.player === 'p2' && activePowerUp?.type === 'teleport';
-    const isLegalP2 = !winner && mode === 'pvp' && turn === 'p2' && isValidMove(p2Pos, {x, y}, blocked, !!p2HasTeleport);
+    const isLegal = !winner && ((mode === 'online' && playerType === 'p1' && turn === 'p1') || (mode !== 'online' && turn === 'p1')) && isValidMove(p1Pos, {x, y}, blocked, !!p1HasTeleport);
+      const p2HasTeleport = activePowerUp?.player === 'p2' && activePowerUp?.type === 'teleport';
+      const isLegalP2 = !winner && ((mode === 'online' && playerType === 'p2' && turn === 'p2') || (mode !== 'online' && turn === 'p2')) && isValidMove(p2Pos, {x, y}, blocked, !!p2HasTeleport);
 
     return (
-      <div 
-        key={`${x}-${y}`} 
+      <div
+        key={`${x},${y}`}
         onClick={() => {
             if (isLegal) makeMove({x, y});
             if (isLegalP2) makeMove({x, y});
@@ -452,6 +575,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
 
   return (
     <div className={`w-full max-w-2xl mx-auto flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden relative theme-${theme}`}>
+
       
       {powerUpMessage && (
           <div className="absolute top-20 z-50 animate-in slide-in-from-top-5 fade-in duration-300">
@@ -460,6 +584,15 @@ export const KnightChaseGame: React.FC<GameProps> = ({
                   <span className="font-hand font-bold text-lg">{powerUpMessage}</span>
               </div>
           </div>
+      )}
+
+      {mode === 'online' && !isConnected && (
+        <div className="absolute top-20 z-50 animate-in slide-in-from-top-5 fade-in duration-300">
+            <div className="bg-red-100 border-2 border-red-400 text-red-800 px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                <ArrowPathIcon className="w-5 h-5 text-red-600 animate-spin" />
+                <span className="font-hand font-bold text-lg">Connection Lost! Reconnecting...</span>
+            </div>
+        </div>
       )}
 
       {/* Header */}
@@ -471,7 +604,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
             <h2 className="font-hand text-xl font-bold">{levelConfig ? levelConfig.title : (mode === 'online' ? 'Online Match' : 'Quick Play')}</h2>
             <span className="text-[10px] font-mono opacity-60 uppercase tracking-widest">{winner ? "Match Ended" : (turn === 'p1' ? "Your Turn" : "Thinking...")}</span>
         </div>
-        <button onClick={resetGame} className={`p-2 rounded-full transition-colors border border-transparent ${theme === 'chalk' ? 'hover:bg-white/10 hover:border-zinc-500 text-white' : 'hover:bg-zinc-200 hover:border-zinc-300 text-zinc-600'}`}>
+        <button onClick={handlePlayAgain} className={`p-2 rounded-full transition-colors border border-transparent ${theme === 'chalk' ? 'hover:bg-white/10 hover:border-zinc-500 text-white' : 'hover:bg-zinc-200 hover:border-zinc-300 text-zinc-600'}`}>
             <ArrowPathIcon className="w-6 h-6" />
         </button>
       </div>
@@ -494,8 +627,24 @@ export const KnightChaseGame: React.FC<GameProps> = ({
 
       {/* Game Board Container */}
       <div className="relative mb-8 perspective-1000">
+        {console.log('isGameStarted:', isGameStarted, 'mode:', mode)}
+        {mode === 'online' && !isGameStarted && (
+            <div key="online-waiting-screen" className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-90 z-50">
+                <div className="text-center text-white font-hand text-3xl animate-pulse">
+                    Waiting for opponent to join...
+                    {roomId && <div className="text-xl mt-2">Room ID: {roomId}</div>}
+                </div>
+            </div>
+        )}
+        {/* Paper Plane Overlay */}
+        {showPlane && (
+            <div className="absolute inset-0 z-40 pointer-events-none overflow-hidden">
+                <PaperAirplaneIcon className="w-24 h-24 text-red-600 animate-plane absolute top-0 left-0" />
+            </div>
+        )}
         {/* Removed bg-paper-variant and replaced with solid bg to avoid double lines */}
-        <div className={`relative p-2 sketch-border shadow-2xl rotate-1 transition-all duration-1000 ${isCrumpled ? 'crumple-active' : ''}`} style={{backgroundColor: theme === 'chalk' ? '#3f3f46' : '#fff'}}>
+        <div className={`relative p-2 sketch-border shadow-2xl rotate-1 transition-all duration-1000 ${isCrumpled ? 'opacity-0' : ''}`} style={{backgroundColor: theme === 'chalk' ? '#3f3f46' : '#fff'}}>
+            {console.log('Rendering game board. isGameStarted:', isGameStarted)}
             <div className={`grid grid-cols-8 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] border-l border-t select-none ${theme === 'chalk' ? 'border-zinc-600' : 'border-zinc-300/50'}`}>
             {Array.from({ length: BOARD_SIZE }).map((_, y) => Array.from({ length: BOARD_SIZE }).map((_, x) => renderCell(x, y)))}
             </div>
@@ -504,14 +653,17 @@ export const KnightChaseGame: React.FC<GameProps> = ({
                     <div key={sticker.id} className="absolute text-4xl sticker-pop drop-shadow-md filter" style={{ left: `${sticker.x}%`, top: `${sticker.y}%`, ['--rot' as any]: `${sticker.rotation}deg`} as React.CSSProperties}>{sticker.emoji}</div>
                 ))}
             </div>
-            {/* Paper Plane Overlay */}
-            {showPlane && (
-                <div className="absolute inset-0 z-40 pointer-events-none overflow-hidden">
-                    <PaperAirplaneIcon className="w-24 h-24 text-red-600 animate-plane absolute top-0 left-0" />
-                </div>
-            )}
-        </div>
-        {isCrumpled && <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-1000 delay-500"><TrashIcon className="w-32 h-32 text-zinc-300/50" /></div>}
+             {/* Paper Plane Overlay */}
+             {showPlane && (
+                 <div className="absolute inset-0 z-40 pointer-events-none overflow-hidden">
+                     <PaperAirplaneIcon className="w-24 h-24 text-red-600 animate-plane absolute top-0 left-0" />
+                 </div>
+             )}
+          </div>
+
+
+
+          {isCrumpled && <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-1000 delay-500"><TrashIcon className="w-32 h-32 text-zinc-300/50" /></div>}
       </div>
 
       {/* Sticker Bar */}
@@ -536,7 +688,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
                     {victoryDoodle && <div className="mb-6 p-2 bg-paper border-2 border-dashed border-blue-200 rounded rotate-1"><p className="text-[10px] font-bold font-hand uppercase text-zinc-400 mb-1">Signature Move</p><img src={victoryDoodle} alt="Signature" className="w-24 h-24 mx-auto object-contain" /></div>}
                     {mode !== 'pvp' && <div className="mb-8 transform scale-110"><div className="inline-block bg-yellow-50 px-6 py-3 rounded-xl border-2 border-yellow-300 border-dashed relative"><p className="font-hand text-xs text-yellow-600 uppercase font-bold absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-100 px-2 text-nowrap">Score Up!</p><p className="font-hand text-4xl font-black text-yellow-500 drop-shadow-sm">+{activeDifficulty === 'easy' ? 100 : activeDifficulty === 'medium' ? 200 : 300}</p></div></div>}
                     <div className="space-y-3">
-                        {mode === 'adventure' && onLevelComplete ? (<button onClick={() => onLevelComplete()} className="w-full sketch-button py-3 font-hand font-bold text-xl bg-green-100 hover:bg-green-200 text-green-900">Next Level →</button>) : (<button onClick={resetGame} className="w-full sketch-button py-3 font-hand font-bold text-xl hover:bg-blue-50 text-black">Play Again</button>)}
+                        {mode === 'adventure' && onLevelComplete ? (<button onClick={() => onLevelComplete()} className="w-full sketch-button py-3 font-hand font-bold text-xl bg-green-100 hover:bg-green-200 text-green-900">Next Level →</button>) : (<button onClick={handlePlayAgain} className="w-full sketch-button py-3 font-hand font-bold text-xl hover:bg-blue-50 text-black">Play Again</button>)}
                         <button onClick={onBack} className="w-full py-2 font-hand text-zinc-400 hover:text-zinc-800 text-sm">Back to Menu</button>
                     </div>
                   </div>
@@ -551,7 +703,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
                    <div className="mb-4"><span className="text-6xl">🗑️</span></div>
                    <h3 className="font-hand text-3xl font-black mb-2 text-red-600">TRASHED!</h3>
                    <p className="font-hand text-sm text-zinc-500 mb-6 italic">"Better luck next time..."</p>
-                   <button onClick={resetGame} className="w-full sketch-button py-3 font-hand font-bold text-lg bg-zinc-100 hover:bg-white text-black">Uncrumple (Try Again)</button>
+                   <button onClick={handlePlayAgain} className="w-full sketch-button py-3 font-hand font-bold text-lg bg-zinc-100 hover:bg-white text-black">Uncrumple (Try Again)</button>
                    <button onClick={onBack} className="mt-4 text-xs font-hand text-zinc-400 hover:text-zinc-600 underline">Give Up</button>
               </div>
           </div>

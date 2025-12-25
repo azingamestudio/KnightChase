@@ -111,6 +111,8 @@ body {
 .btn-purple { background-color: #f3e8ff; } /* Purple 100 */
 .btn-yellow { background-color: #fef9c3; } /* Yellow 100 */
 .btn-gray { background-color: #f4f4f5; } /* Zinc 100 */
+.btn-danger { background-color: #fee2e2; } /* Red 100 */
+
 
 .sketch-modal {
     background: white;

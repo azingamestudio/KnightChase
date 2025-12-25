@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React, { useRef, useState } from 'react';
-import { ArrowLeftIcon, MusicalNoteIcon, SpeakerWaveIcon, UserIcon, PencilSquareIcon, SwatchIcon, BeakerIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, MusicalNoteIcon, SpeakerWaveIcon, UserIcon, PencilSquareIcon, SwatchIcon, BeakerIcon, InformationCircleIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { PlayerNames, GameTheme, GameModifiers } from '../App';
+import { setSFXVolume, setMusicVolume } from '../src/lib/audio';
 import { DoodleCanvas } from './DoodleCanvas';
+import { registerUser } from '../src/lib/api';
 
 interface SettingsProps {
   onBack: () => void;
@@ -23,6 +25,10 @@ interface SettingsProps {
   onThemeChange: (theme: GameTheme) => void;
   modifiers: GameModifiers;
   onModifiersChange: (mods: GameModifiers) => void;
+  isPremium: boolean;
+  onBuyPremium: () => void;
+  onRestorePurchases: () => void;
+  onDebugTogglePremium: () => void; // For testing
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
@@ -38,27 +44,46 @@ export const Settings: React.FC<SettingsProps> = ({
     theme,
     onThemeChange,
     modifiers,
-    onModifiersChange
+    onModifiersChange,
+    isPremium,
+    onBuyPremium,
+    onRestorePurchases,
+    onDebugTogglePremium
 }) => {
-  const [music, setMusic] = React.useState(true);
-  const [sfx, setSfx] = React.useState(true);
+  const [musicVolume, setMusicVolumeState] = useState(1);
+  const [sfxVolume, setSfxVolumeState] = useState(1);
   const [showDoodleCanvas, setShowDoodleCanvas] = useState(false);
   const [activeInfo, setActiveInfo] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'success' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
+
+  const handleUsernameRegister = async () => {
+      setUsernameStatus('checking');
+      const res = await registerUser(playerNames.p1);
+      if (res.success) {
+          setUsernameStatus('success');
+          setStatusMessage(res.message);
+      } else {
+          setUsernameStatus('error');
+          setStatusMessage(res.error || 'Failed to register');
+      }
+  };
+
   const skins = [
-    { id: 'knight', name: 'Knight', icon: '♞' },
-    { id: 'king', name: 'King', icon: '♚' },
-    { id: 'wizard', name: 'Wizard', icon: '🧙‍♂️' },
-    { id: 'ghost', name: 'Ghost', icon: '👻' },
-    { id: 'custom', name: 'Custom', icon: '🖼️' }
+    { id: 'knight', name: 'Knight', icon: '♞', premium: false },
+    { id: 'king', name: 'King', icon: '♚', premium: true }, // Premium
+    { id: 'wizard', name: 'Wizard', icon: '🧙‍♂️', premium: true }, // Premium
+    { id: 'ghost', name: 'Ghost', icon: '👻', premium: true }, // Premium
+    { id: 'custom', name: 'Custom', icon: '🖼️', premium: true } // Premium
   ];
 
-  const themes: {id: GameTheme, name: string, color: string}[] = [
-      { id: 'pencil', name: 'Classic Pencil', color: '#e5e7eb' },
-      { id: 'blue', name: 'Blue Ink', color: '#bfdbfe' },
-      { id: 'neon', name: 'Highlighter', color: '#fef08a' },
-      { id: 'chalk', name: 'Chalkboard', color: '#27272a' }
+  const themes: {id: GameTheme, name: string, color: string, premium: boolean}[] = [
+      { id: 'pencil', name: 'Classic Pencil', color: '#e5e7eb', premium: false },
+      { id: 'blue', name: 'Blue Ink', color: '#bfdbfe', premium: false },
+      { id: 'neon', name: 'Highlighter', color: '#fef08a', premium: true }, // Premium
+      { id: 'chalk', name: 'Chalkboard', color: '#27272a', premium: true } // Premium
   ];
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,11 +118,84 @@ export const Settings: React.FC<SettingsProps> = ({
             <ArrowLeftIcon className="w-6 h-6" />
         </button>
         <h2 className="font-hand text-3xl font-bold">Settings</h2>
-        <div className="w-6"></div>
+        <div className="w-10"></div>
       </div>
 
-      <div className="space-y-6 pb-10">
-        
+      <div className="space-y-8 pb-10">
+          
+        {/* Premium Status & Debug */}
+        <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200">
+            <div className="flex items-center justify-between mb-2">
+                <span className="font-hand font-bold text-lg">Premium Status:</span>
+                <span className={`font-hand font-bold ${isPremium ? 'text-green-600' : 'text-zinc-500'}`}>
+                    {isPremium ? 'ACTIVE 👑' : 'Free Plan'}
+                </span>
+            </div>
+            {!isPremium && (
+                <button onClick={onBuyPremium} className="w-full sketch-button py-2 bg-yellow-400 hover:bg-yellow-500 mb-2">
+                    <span className="font-hand font-bold text-white">Unlock Premium</span>
+                </button>
+            )}
+            <button onClick={onRestorePurchases} className="w-full text-xs text-zinc-500 underline mb-4">
+                Restore Purchases
+            </button>
+            
+            {/* Developer Debug Area - Remove in production if desired, or keep hidden */}
+            <div className="border-t border-yellow-200 pt-2 mt-2">
+                <p className="text-[10px] text-zinc-400 font-mono mb-1">DEVELOPER ZONE</p>
+                <button 
+                    onClick={onDebugTogglePremium} 
+                    className="w-full py-1 bg-zinc-200 hover:bg-zinc-300 rounded text-xs font-mono text-zinc-600"
+                >
+                    [Debug] Force Toggle Premium
+                </button>
+            </div>
+        </div>
+
+        {/* Audio Settings */}
+        <div className="sketch-border bg-white p-6">
+            <div className="flex items-center space-x-3 mb-4">
+                <SpeakerWaveIcon className="w-6 h-6 text-zinc-600" />
+                <span className="font-hand text-xl font-bold text-zinc-800">Volume</span>
+            </div>
+            <div className="space-y-4">
+                <div>
+                    <label htmlFor="music-volume" className="block font-hand text-sm font-bold text-zinc-700 mb-2">Music Volume</label>
+                    <input
+                        id="music-volume"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={musicVolume}
+                        onChange={(e) => {
+                            const vol = parseFloat(e.target.value);
+                            setMusicVolumeState(vol);
+                            setMusicVolume(vol);
+                        }}
+                        className="w-full h-2 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="sfx-volume" className="block font-hand text-sm font-bold text-zinc-700 mb-2">SFX Volume</label>
+                    <input
+                        id="sfx-volume"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={sfxVolume}
+                        onChange={(e) => {
+                            const vol = parseFloat(e.target.value);
+                            setSfxVolumeState(vol);
+                            setSFXVolume(vol);
+                        }}
+                        className="w-full h-2 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                </div>
+            </div>
+        </div>
+
         {/* 1. VISUAL STYLE (Theme) - Feature 5 */}
         <div className="sketch-border bg-white p-6">
             <div className="flex items-center space-x-3 mb-4">
@@ -109,14 +207,21 @@ export const Settings: React.FC<SettingsProps> = ({
                     <button
                         key={t.id}
                         onClick={() => onThemeChange(t.id)}
+                        disabled={!isPremium && t.premium} // Premium değilse tıklenamaz
                         className={`
-                            p-3 rounded-lg border-2 font-hand font-bold text-sm flex items-center gap-2
+                            p-3 rounded-lg border-2 font-hand font-bold text-sm flex items-center gap-2 relative
                             ${theme === t.id ? 'border-blue-500 ring-1 ring-blue-500' : 'border-zinc-200 hover:border-zinc-400'}
+                            ${!isPremium && t.premium ? 'opacity-50 cursor-not-allowed' : ''}
                         `}
                         style={{ background: t.id === 'chalk' ? '#27272a' : 'white' }}
                     >
                         <div className="w-4 h-4 rounded-full border border-black/10" style={{backgroundColor: t.color}}></div>
                         <span style={{ color: t.id === 'chalk' ? 'white' : '#27272a' }}>{t.name}</span>
+                        {!isPremium && t.premium && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+                                <LockClosedIcon className="w-6 h-6 text-white" />
+                            </div>
+                        )}
                     </button>
                 ))}
             </div>
@@ -201,12 +306,14 @@ export const Settings: React.FC<SettingsProps> = ({
                                 onSkinChange(skin.id);
                             }
                         }}
+                        disabled={!isPremium && skin.premium} // Premium değilse tıklenamaz
                         className={`
                             relative h-20 rounded-lg flex flex-col items-center justify-center border-2 transition-all overflow-hidden
                             ${currentSkin === skin.id 
                                 ? 'bg-blue-50 border-blue-500 scale-105 shadow-md' 
                                 : 'bg-zinc-50 border-zinc-200 hover:border-zinc-400'
                             }
+                            ${!isPremium && skin.premium ? 'opacity-50 cursor-not-allowed' : ''}
                         `}
                     >
                         {skin.id === 'custom' && customSkin ? (
@@ -220,6 +327,11 @@ export const Settings: React.FC<SettingsProps> = ({
                         {currentSkin === skin.id && (
                             <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs z-10">
                                 ✓
+                            </div>
+                        )}
+                        {!isPremium && skin.premium && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+                                <LockClosedIcon className="w-6 h-6 text-white" />
                             </div>
                         )}
                     </button>
@@ -262,20 +374,32 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
         </div>
 
-        {/* Name Customization */}
+        {/* Player Names */}
         <div className="sketch-border bg-white p-6">
-            <div className="flex items-center space-x-3 mb-4">
-                <span className="font-hand text-xl font-bold text-zinc-800">Player Names</span>
-            </div>
-            <div className="space-y-3">
+            <h3 className="font-hand text-xl font-bold mb-4">Player Identity</h3>
+            <div className="space-y-4">
                 <div>
-                    <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase">Your Name</label>
-                    <input 
-                        type="text" 
-                        value={playerNames.p1}
-                        onChange={(e) => onNamesChange({...playerNames, p1: e.target.value})}
-                        className="w-full p-2 font-hand border-2 border-zinc-200 rounded focus:border-blue-500 outline-none transition-colors"
-                    />
+                    <label className="block font-hand text-sm mb-1 text-zinc-600">Your Username (Online & High Scores)</label>
+                    <div className="flex gap-2">
+                        <input 
+                            type="text" 
+                            value={playerNames.p1} 
+                            onChange={(e) => onNamesChange({ ...playerNames, p1: e.target.value })}
+                            className="w-full p-2 border-2 border-zinc-300 rounded font-hand focus:border-zinc-800 outline-none uppercase"
+                            maxLength={12}
+                        />
+                        <button 
+                            onClick={handleUsernameRegister}
+                            className="px-4 bg-zinc-800 text-white font-hand rounded hover:bg-zinc-700"
+                        >
+                            Save
+                        </button>
+                    </div>
+                    {statusMessage && (
+                        <p className={`font-hand text-xs mt-1 ${usernameStatus === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                            {statusMessage}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
