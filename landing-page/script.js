@@ -42,6 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(card);
     });
 
+    // Animate game mode cards
+    document.querySelectorAll('.mode-card, .premium-banner').forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(-50px)';
+        card.style.transition = `all 0.5s ease ${index * 0.1}s`;
+        observer.observe(card);
+    });
+
     // Animate stats
     document.querySelectorAll('.stat-item').forEach((stat, index) => {
         stat.style.opacity = '0';
