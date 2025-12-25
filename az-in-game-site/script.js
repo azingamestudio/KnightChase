@@ -46,17 +46,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Game Demo Modal Logic
     const modal = document.getElementById("gameModal");
     const btn = document.getElementById("openDemoBtn");
-    const span = document.getElementsByClassName("close-modal")[0];
+    const span = document.querySelector(".close-modal");
     const gameFrame = document.getElementById("gameFrame");
 
     if (btn) {
         btn.onclick = function() {
             modal.style.display = "flex";
-            // Load the game only when modal is opened to save resources
             if (!gameFrame.src) {
+                // Use the Render URL for the demo
                 gameFrame.src = "https://knightchase.onrender.com/";
             }
-            document.body.style.overflow = "hidden"; // Prevent background scrolling
+            document.body.style.overflow = "hidden";
         }
     }
 
@@ -64,8 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         span.onclick = function() {
             modal.style.display = "none";
             document.body.style.overflow = "auto";
-            // Optional: Reset iframe source to stop game sounds/logic when closed
-            // gameFrame.src = ""; 
+            gameFrame.src = ""; // Reset to stop audio/gameplay
         }
     }
 
@@ -73,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target == modal) {
             modal.style.display = "none";
             document.body.style.overflow = "auto";
+            gameFrame.src = "";
         }
     }
 });

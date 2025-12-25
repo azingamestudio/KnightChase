@@ -488,6 +488,13 @@ export const KnightChaseGame: React.FC<GameProps> = ({
         setActivePowerUp(newGameState.activePowerUp);
         setPowerUpMessage(newGameState.powerUpMessage);
         setP1Sabotage(newGameState.p1Sabotage);
+        
+        // Online Defeat Effect
+        if (newGameState.winner && newGameState.winner !== playerType) {
+            setIsCrumpled(true);
+        } else {
+            setIsCrumpled(false);
+        }
       });
 
       socket.on('gameStateUpdate', (gameState: any) => {
@@ -505,6 +512,13 @@ export const KnightChaseGame: React.FC<GameProps> = ({
         setPowerUpMessage(gameState.powerUpMessage);
         setP1Sabotage(gameState.p1Sabotage);
         setIsGameStarted(true); // Game has started once initial state is received
+
+        // Online Defeat Effect
+        if (gameState.winner && gameState.winner !== playerType) {
+            setIsCrumpled(true);
+        } else {
+            setIsCrumpled(false);
+        }
       });
 
       return () => {
