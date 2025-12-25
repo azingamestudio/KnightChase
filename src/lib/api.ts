@@ -38,15 +38,17 @@ const getBaseUrl = () => {
 export const API_URL = getBaseUrl();
 export const SOCKET_URL = getBaseUrl();
 
+import { safeStorage } from './storage';
+
 // Helper to get or create a unique device ID
 const getDeviceId = () => {
     const STORAGE_KEY = 'knight_chase_device_id';
-    let deviceId = localStorage.getItem(STORAGE_KEY);
+    let deviceId = safeStorage.getItem(STORAGE_KEY);
     
     if (!deviceId) {
         // Generate a random ID: timestamp + random string
         deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem(STORAGE_KEY, deviceId);
+        safeStorage.setItem(STORAGE_KEY, deviceId);
     }
     
     return deviceId;

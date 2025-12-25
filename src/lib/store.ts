@@ -1,6 +1,8 @@
 import 'cordova-plugin-purchase';
 import { Capacitor } from '@capacitor/core';
 
+import { safeStorage } from './storage';
+
 // Product ID from Google Play Console / App Store Connect
 // You MUST create a Managed Product with this exact ID in the console
 export const PRODUCT_ID_PREMIUM = 'knight_chase_premium';
@@ -19,11 +21,11 @@ export const registerPremiumListener = (callback: PremiumStatusCallback) => {
 
 const notifyListeners = (isPremium: boolean) => {
     listeners.forEach(cb => cb(isPremium));
-    localStorage.setItem('isPremium', isPremium ? 'true' : 'false');
+    safeStorage.setItem('isPremium', isPremium ? 'true' : 'false');
 };
 
 const getLocallyStoredPremiumStatus = (): boolean => {
-    return localStorage.getItem('isPremium') === 'true';
+    return safeStorage.getItem('isPremium') === 'true';
 };
 
 export const initializeStore = () => {
