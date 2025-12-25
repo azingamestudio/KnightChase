@@ -467,6 +467,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
             powerUpMessage: nextPowerUpMessage,
             p1Sabotage: nextP1Sabotage,
         };
+        console.log('Sending gameMove:', newGameState);
         socket.emit('gameMove', { roomId, fromPosition: currentPos, toPosition: target, playerTurn: playerType, newGameState });
     }
   };
@@ -474,30 +475,10 @@ export const KnightChaseGame: React.FC<GameProps> = ({
   // Online oyun için socket olaylarını dinle
   useEffect(() => {
     if (mode === 'online' && socket && roomId && playerType) {
-      socket.on('gameMove', ({ newGameState }: { newGameState: any }) => {
-        console.log('Received gameMove with newGameState:', newGameState);
-        // Sunucudan gelen tüm oyun durumunu güncelle
-        setP1Pos(newGameState.p1Pos);
-        setP2Pos(newGameState.p2Pos);
-        setBlocked(new Set(newGameState.blocked));
-        setTurn(newGameState.turn);
-        setTurnCount(newGameState.turnCount);
-        setWinner(newGameState.winner);
-        setWinReason(newGameState.winReason);
-        setMysteryPos(newGameState.mysteryPos);
-        setActivePowerUp(newGameState.activePowerUp);
-        setPowerUpMessage(newGameState.powerUpMessage);
-        setP1Sabotage(newGameState.p1Sabotage);
-        
-        // Online Defeat Effect
-        if (newGameState.winner && newGameState.winner !== playerType) {
-            setIsCrumpled(true);
-        } else {
-            setIsCrumpled(false);
-        }
-      });
+      // Not: Sunucu 'gameMove' olayına karşılık 'gameStateUpdate' gönderiyor.
+      // Bu yüzden 'gameMove' dinleyicisine gerek yok, tüm güncellemeler 'gameStateUpdate' ile yapılacak.
 
-      socket.on('gameStateUpdate', (gameState: any) => {
+      const handleGameStateUpdate = (gameState: any) => {
         console.log('Received gameStateUpdate:', gameState);
         // Sunucudan gelen tüm oyun durumunu güncelle
         setP1Pos(gameState.p1Pos);
@@ -511,22 +492,66 @@ export const KnightChaseGame: React.FC<GameProps> = ({
         setActivePowerUp(gameState.activePowerUp);
         setPowerUpMessage(gameState.powerUpMessage);
         setP1Sabotage(gameState.p1Sabotage);
-        setIsGameStarted(true); // Game has started once initial state is received
+        setIsGameStarted(true);
 
-        // Online Defeat Effect
-        if (gameState.winner && gameState.winner !== playerType) {
-            setIsCrumpled(true);
+        // Fallback Win Check for Online (Safety Net)
+        if (!gameState.winner) {
+             if (gameState.p1Pos.x === gameState.p2Pos.x && gameState.p1Pos.y === gameState.p2Pos.y) {
+                 setWinner(gameState.turn);
+                 setWinReason("CAPTURED THE ENEMY!");
+             }
+        }
+
+        // Online Defeat/Victory Effect
+        if (gameState.winner) {
+            if (gameState.winner !== playerType) {
+                // Kaybeden oyuncu
+                setIsCrumpled(true);
+            } else {
+                // Kazanan oyuncu
+                setIsCrumpled(false);
+            }
         } else {
             setIsCrumpled(false);
         }
-      });
+      };
+
+      socket.on('gameStateUpdate', handleGameStateUpdate);
 
       return () => {
-        socket.off('gameMove');
-        socket.off('gameStateUpdate');
+        socket.off('gameStateUpdate', handleGameStateUpdate);
       };
     }
   }, [mode, socket, roomId, playerType]);
+
+  // Safety Net: Check if I am trapped when it becomes my turn (Online Mode)
+  // This ensures the game ends even if the opponent's client failed to detect the win condition.
+  useEffect(() => {
+    if (mode === 'online' && isGameStarted && turn === playerType && !winner) {
+       const currentPos = playerType === 'p1' ? p1Pos : p2Pos;
+       const myPowerUp = activePowerUp?.player === playerType ? activePowerUp : null;
+       const hasTeleport = myPowerUp?.type === 'teleport';
+       const legalMoves = getLegalMoves(currentPos, blocked, hasTeleport);
+       
+       if (legalMoves.length === 0) {
+           console.log("Detected I am trapped! Admitting defeat.");
+           const opponent = playerType === 'p1' ? 'p2' : 'p1';
+           
+           // Construct final game state with winner set to opponent
+           const finalState = {
+               p1Pos, p2Pos, blocked: Array.from(blocked),
+               turn, turnCount,
+               winner: opponent, 
+               winReason: "OPPONENT IS TRAPPED!",
+               mysteryPos, activePowerUp, powerUpMessage, p1Sabotage
+           };
+
+           if (socket && roomId) {
+               socket.emit('updateGameState', { roomId, gameState: finalState });
+           }
+       }
+    }
+  }, [mode, isGameStarted, turn, playerType, winner, p1Pos, p2Pos, blocked, activePowerUp, socket, roomId]);
 
   // Handle socket connection/disconnection
   useEffect(() => {
@@ -754,7 +779,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
       )}
 
       {/* Winner Modal */}
-      {winner === 'p1' && (
+      {winner && ((mode === 'online' && playerType === winner) || (mode !== 'online' && !isCrumpled)) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
               <div className="sketch-modal bg-white p-8 max-w-sm w-full text-center relative overflow-visible">
                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-16 bg-white rounded-full border-4 border-zinc-800 flex items-center justify-center shadow-lg"><span className="text-3xl">🏆</span></div>
