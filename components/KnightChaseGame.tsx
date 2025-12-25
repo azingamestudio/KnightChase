@@ -678,7 +678,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
         </button>
         <div className={`flex flex-col items-center px-4 py-1 rounded-lg border shadow-sm transform rotate-1 ${theme === 'chalk' ? 'bg-zinc-800 border-zinc-600 text-white' : 'bg-white border-zinc-200 text-zinc-800'}`}>
             <h2 className="font-hand text-xl font-bold">{levelConfig ? levelConfig.title : (mode === 'online' ? 'Online Match' : 'Quick Play')}</h2>
-            <span className="text-[10px] font-mono opacity-60 uppercase tracking-widest">{winner ? "Match Ended" : (turn === 'p1' ? "Your Turn" : "Thinking...")}</span>
+            <span className="text-[10px] font-mono opacity-60 uppercase tracking-widest">{winner ? "Match Ended" : (mode === 'online' ? (turn === playerType ? "YOUR TURN" : "OPPONENT'S TURN") : (turn === 'p1' ? "Your Turn" : "Thinking..."))}</span>
         </div>
         <button onClick={handlePlayAgain} className={`p-2 rounded-full transition-colors border border-transparent ${theme === 'chalk' ? 'hover:bg-white/10 hover:border-zinc-500 text-white' : 'hover:bg-zinc-200 hover:border-zinc-300 text-zinc-600'}`}>
             <ArrowPathIcon className="w-6 h-6" />
