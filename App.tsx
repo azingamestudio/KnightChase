@@ -473,6 +473,9 @@ const App: React.FC = () => {
                     onDebugTogglePremium={() => setIsPremium(!isPremium)}
                     lang={currentLang}
                     onLanguageChange={changeLanguage}
+                    user={user}
+                    onSignIn={signInWithGoogle}
+                    onSignOut={signOut}
                 />
             );
         case 'online_lobby':
