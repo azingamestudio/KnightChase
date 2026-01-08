@@ -4,8 +4,9 @@
 */
 import React, { useState, useMemo, useEffect } from 'react';
 // Corrected imports: Replaced TargetIcon with BoltIcon which exists in the solid set.
-import { ArrowLeftIcon, LockClosedIcon, XMarkIcon, StarIcon, MapIcon, FireIcon, BeakerIcon, PencilIcon, FlagIcon, BoltIcon, ShieldCheckIcon, HeartIcon } from '@heroicons/react/24/solid';
+import { ArrowLeftIcon, LockClosedIcon, XMarkIcon, StarIcon, MapIcon, FireIcon, BeakerIcon, PencilIcon, FlagIcon, BoltIcon, ShieldCheckIcon, HeartIcon, VideoCameraIcon } from '@heroicons/react/24/solid';
 import { t, LanguageCode } from '../src/lib/i18n';
+import { showRewardedAd } from '../src/lib/admob';
 
 export type ChallengeType = 'CAPTURE' | 'PATH' | 'ASSASSIN' | 'SURVIVE';
 
@@ -92,6 +93,7 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({
     onSelectLevel, 
     unlockedLevelCount,
     lives,
+    onAddLives,
     maxLives,
     nextRefill,
     lang
@@ -136,6 +138,16 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({
           case 'ASSASSIN': return <BoltIcon className="w-4 h-4 text-red-500" />;
           case 'SURVIVE': return <ShieldCheckIcon className="w-4 h-4 text-blue-500" />;
           default: return <StarIcon className="w-4 h-4 text-yellow-500" />;
+      }
+  };
+
+  const handleWatchAd = async () => {
+      try {
+          await showRewardedAd(() => {
+              onAddLives(7);
+          });
+      } catch (error) {
+          console.error(error);
       }
   };
 

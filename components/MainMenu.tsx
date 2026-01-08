@@ -15,12 +15,6 @@ interface MainMenuProps {
 }
 
 
-const AdBanner = () => (
-  <div className="w-full h-16 bg-zinc-200 border-2 border-dashed border-zinc-400 flex items-center justify-center my-4 rounded">
-     <span className="text-zinc-500 font-hand text-sm">Ads</span>
-     {/* Buraya Google AdSense veya AdMob kodu gelecek */}
-  </div>
-);
 
 const MenuButton = ({ 
     onClick, 
@@ -52,9 +46,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
       
       <img src="/knight-chase-logo.png" alt="Knight Chase Logo" className="w-full max-w-xs mx-auto mb-6 animate-in fade-in zoom-in duration-700" />
 
-      {!isPremium && (
-        <AdBanner />
-      )}
 
       <div className="w-full space-y-4 relative z-10 mt-2">
         <MenuButton 

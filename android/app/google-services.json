@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "758569726130",
+    "project_id": "knightchase-68ab7",
+    "storage_bucket": "knightchase-68ab7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:758569726130:android:899c780c4808f088a859ab",
+        "android_client_info": {
+          "package_name": "com.azingamestudio.knightchase"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD33TFQu_tSnh49WSvNX4PDKhSXlTz43Sk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -17,6 +17,7 @@ import { io, Socket } from 'socket.io-client';
 import { API_URL, SOCKET_URL, registerUser, submitScore } from './src/lib/api';
 import { getLanguage, setLanguage, LanguageCode, t } from './src/lib/i18n';
 import { safeStorage } from './src/lib/storage';
+import { initializeFirebase } from './src/lib/firebase';
 
 type View = 'menu' | 'ai_select' | 'game_pvp' | 'game_ai' | 'game_adventure' | 'game_online' | 'adventure' | 'online_lobby' | 'leaderboard' | 'settings';
 
@@ -71,6 +72,9 @@ const App: React.FC = () => {
   useEffect(() => {
     // Audio
     setIsMutedState(getIsMuted());
+
+    // Initialize Firebase
+    initializeFirebase();
 
     // Initialize AdMob
     initializeAdMob().then(() => {
@@ -414,6 +418,7 @@ const App: React.FC = () => {
                     onSelectLevel={startAdventureLevel} 
                     unlockedLevelCount={unlockedLevels}
                     lives={lives}
+                    onAddLives={addLives}
                     maxLives={isPremium ? MAX_LIVES_PREMIUM : MAX_LIVES_FREE}
                     nextRefill={lastRefill + REFILL_INTERVAL}
                     lang={currentLang}
