@@ -234,6 +234,13 @@ const App: React.FC = () => {
       setView('game_adventure');
   };
 
+  const addLives = (amount: number) => {
+      setLives(prev => {
+          const max = isPremium ? MAX_LIVES_PREMIUM : MAX_LIVES_FREE;
+          return Math.min(prev + amount, max);
+      });
+  };
+
   const retryAdventureLevel = () => {
       if (lives <= 0) {
           alert(t('adventure_no_lives', currentLang));

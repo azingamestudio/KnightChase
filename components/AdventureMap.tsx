@@ -29,6 +29,7 @@ interface AdventureMapProps {
   onSelectLevel: (config: LevelConfig) => void;
   unlockedLevelCount: number;
   lives: number;
+  onAddLives: (amount: number) => void;
   maxLives: number;
   nextRefill: number;
   lang: LanguageCode;
@@ -163,11 +164,21 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({
                 </div>
 
                 {/* Lives */}
-                <div className="flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
-                    <HeartIcon className="w-4 h-4 text-red-500 animate-pulse" />
-                    <span className={`font-hand font-bold text-sm ${lives === 0 ? 'text-red-600' : 'text-zinc-700'}`}>
-                        {lives}/{maxLives}
-                    </span>
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
+                        <HeartIcon className="w-4 h-4 text-red-500 animate-pulse" />
+                        <span className={`font-hand font-bold text-sm ${lives === 0 ? 'text-red-600' : 'text-zinc-700'}`}>
+                            {lives}/{maxLives}
+                        </span>
+                    </div>
+                    {/* Ad Button */}
+                    <button 
+                        onClick={handleWatchAd}
+                        className="flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors active:scale-95"
+                    >
+                        <VideoCameraIcon className="w-4 h-4 text-emerald-600" />
+                        <span className="font-hand font-bold text-xs text-emerald-700">+7</span>
+                    </button>
                 </div>
             </div>
             {/* Refill Timer */}
