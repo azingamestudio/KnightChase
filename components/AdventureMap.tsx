@@ -196,7 +196,7 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({
                     `}
                   >
                       <Icon className={`w-5 h-5 ${ch.color}`} />
-                      <span className="font-hand font-bold text-sm whitespace-nowrap">{ch.name}</span>
+                      <span className="font-hand font-bold text-sm whitespace-nowrap">{t(`adv_ch${ch.id}_name`, lang)}</span>
                       {isChapterLocked && <LockClosedIcon className="w-3 h-3 text-zinc-400" />}
                   </button>
               );
@@ -239,9 +239,9 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({
                                 </div>
                             </div>
                             
-                            <h3 className="font-hand text-2xl font-bold text-zinc-800 leading-tight mb-1">{level.title}</h3>
+                            <h3 className="font-hand text-2xl font-bold text-zinc-800 leading-tight mb-1">{t(`adv_l${level.id}_title`, lang)}</h3>
                             <p className="font-hand text-xs text-zinc-500 uppercase tracking-widest font-bold">
-                                Difficulty: {level.difficulty}
+                                {t('adventure_difficulty', lang)}: {level.difficulty}
                             </p>
                         </button>
                     );
@@ -256,8 +256,8 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({
               <div className="sketch-modal bg-white w-full max-w-sm relative overflow-hidden flex flex-col max-h-[90vh] shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-4 border-zinc-800 rounded-3xl">
                   <div className="bg-zinc-50 p-6 border-b-2 border-zinc-800 flex justify-between items-center pt-4">
                       <div>
-                        <h3 className="font-hand text-sm font-bold text-zinc-400 uppercase tracking-widest leading-none mb-1">Page {selectedLevel.id}</h3>
-                        <h2 className="font-hand text-3xl font-black text-zinc-800 leading-none">{selectedLevel.title}</h2>
+                        <h3 className="font-hand text-sm font-bold text-zinc-400 uppercase tracking-widest leading-none mb-1">{t('adventure_page', lang)} {selectedLevel.id}</h3>
+                        <h2 className="font-hand text-3xl font-black text-zinc-800 leading-none">{t(`adv_l${selectedLevel.id}_title`, lang)}</h2>
                       </div>
                       <button 
                         onClick={() => setSelectedLevel(null)}
@@ -269,16 +269,16 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({
 
                   <div className="p-8 overflow-y-auto space-y-6">
                       <div>
-                          <h4 className="font-hand text-xs font-bold uppercase tracking-widest text-blue-500 mb-2">The Story</h4>
+                          <h4 className="font-hand text-xs font-bold uppercase tracking-widest text-blue-500 mb-2">{t('adventure_story', lang)}</h4>
                           <p className="font-hand text-xl text-zinc-700 leading-relaxed italic border-l-4 border-blue-200 pl-4 py-1">
-                              "{selectedLevel.story}"
+                              "{t(`adv_l${selectedLevel.id}_story`, lang)}"
                           </p>
                       </div>
 
                       <div className="bg-orange-50 p-5 rounded-2xl border-2 border-orange-200 relative overflow-hidden">
-                          <h4 className="font-hand text-xs font-bold uppercase tracking-widest text-orange-600 mb-2">Objective</h4>
+                          <h4 className="font-hand text-xs font-bold uppercase tracking-widest text-orange-600 mb-2">{t('adventure_objective', lang)}</h4>
                           <p className="font-hand text-xl font-bold text-zinc-800 relative z-10">
-                              {selectedLevel.objective}
+                              {t(`adv_l${selectedLevel.id}_obj`, lang)}
                           </p>
                       </div>
                   </div>
@@ -299,7 +299,7 @@ export const AdventureMap: React.FC<AdventureMapProps> = ({
                             : 'bg-zinc-200 text-zinc-400 cursor-not-allowed shadow-none'}
                         `}
                       >
-                          Start Battle!
+                          {t('adventure_start', lang)}
                       </button>
                   </div>
               </div>

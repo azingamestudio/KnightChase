@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowPathIcon, HomeIcon, ShareIcon, FaceSmileIcon, FireIcon, HandThumbDownIcon, HandThumbUpIcon, TrashIcon, GiftIcon, BoltIcon, SparklesIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, HomeIcon, ShareIcon, FaceSmileIcon, FireIcon, HandThumbDownIcon, HandThumbUpIcon, TrashIcon, GiftIcon, BoltIcon, SparklesIcon, PaperAirplaneIcon, FlagIcon } from '@heroicons/react/24/outline';
 import { LevelConfig } from './AdventureMap';
 import { PlayerNames, GameTheme, GameModifiers } from '../App';
 import { playSFX } from '../src/lib/audio';
@@ -251,14 +251,15 @@ export const KnightChaseGame: React.FC<GameProps> = ({
 
   const resetGame = () => {
     setIsCrumpled(false);
+    setWinner(null); // Clear winner immediately to prevent modal flash
+    setWinReason('');
+    
     setTimeout(() => {
         setP1Pos(initialP1);
         setP2Pos(initialP2);
         setBlocked(new Set(levelConfig?.initialBlocked || []));
         setTurn('p1');
         setTurnCount(0);
-        setWinner(null);
-        setWinReason('');
         setChatMsg(null);
         setScoreProcessed(false);
         setStickers([]);
@@ -458,14 +459,27 @@ export const KnightChaseGame: React.FC<GameProps> = ({
     // Check Win (Duplicate logic to ensure sync)
     let nextWinner = null;
     let nextWinReason = '';
+
+    // Check Adventure Goal (PATH)
+    if (levelConfig && levelConfig.type === 'PATH' && levelConfig.goal) {
+        // Only P1 (Player) can win by reaching goal
+        if (nextP1.x === levelConfig.goal.x && nextP1.y === levelConfig.goal.y) {
+            nextWinner = 'p1';
+            nextWinReason = t('game_victory', lang);
+            setWinner(nextWinner); setWinReason(nextWinReason);
+        }
+    }
     
     // Check Capture
-    if (nextP1.x === nextP2.x && nextP1.y === nextP2.y) {
-        nextWinner = turn === 'p1' ? 'p1' : 'p2';
-        nextWinReason = t('game_captured', lang);
-        setWinner(nextWinner); setWinReason(nextWinReason);
-        if (nextWinner !== 'p1') setIsCrumpled(true);
-    } else {
+    if (!nextWinner && nextP1.x === nextP2.x && nextP1.y === nextP2.y) {
+        // In PATH mode, capturing does not end the game (unless it's the goal, handled above)
+        if (levelConfig?.type !== 'PATH') {
+            nextWinner = turn === 'p1' ? 'p1' : 'p2';
+            nextWinReason = t('game_captured', lang);
+            setWinner(nextWinner); setWinReason(nextWinReason);
+            if (nextWinner !== 'p1') setIsCrumpled(true);
+        }
+    } else if (!nextWinner) {
         // Check Trapped
         const nextPlayer = turn === 'p1' ? 'p2' : 'p1';
         const nextPos = nextPlayer === 'p1' ? nextP1 : nextP2;
@@ -477,6 +491,17 @@ export const KnightChaseGame: React.FC<GameProps> = ({
             nextWinReason = t('game_trapped', lang);
             setWinner(nextWinner); setWinReason(nextWinReason);
             if (turn !== 'p1') setIsCrumpled(true);
+        }
+    }
+
+    // Check Move Limit (Adventure Mode)
+    if (!nextWinner && levelConfig?.moveLimit) {
+        const movesMade = Math.ceil(turnCount / 2) + (turn === 'p1' ? 1 : 0);
+        if (movesMade >= levelConfig.moveLimit) {
+             nextWinner = 'p2';
+             nextWinReason = t('game_out_of_moves', lang);
+             setWinner(nextWinner); setWinReason(nextWinReason);
+             setIsCrumpled(true);
         }
     }
 
@@ -650,7 +675,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
     const isP2 = false;
     const isBlocked = blocked.has(`${x},${y}`);
     const isMystery = mysteryPos && mysteryPos.x === x && mysteryPos.y === y;
-
+    const isGoal = levelConfig?.type === 'PATH' && levelConfig.goal?.x === x && levelConfig.goal?.y === y;
 
     
     const p1HasTeleport = activePowerUp?.player === 'p1' && activePowerUp?.type === 'teleport';
@@ -685,6 +710,13 @@ export const KnightChaseGame: React.FC<GameProps> = ({
                 <div className="w-3/4 h-3/4 animate-bounce">
                     <div className="w-full h-full bg-yellow-100 border-2 border-yellow-400 rounded flex items-center justify-center shadow-md">
                         <GiftIcon className="w-5 h-5 text-yellow-600" />
+                    </div>
+                </div>
+            )}
+            {isGoal && !isP1 && !isP2 && (
+                <div className="w-3/4 h-3/4 animate-bounce">
+                    <div className="w-full h-full bg-green-100 border-2 border-green-400 rounded flex items-center justify-center shadow-md">
+                        <FlagIcon className="w-5 h-5 text-green-600" />
                     </div>
                 </div>
             )}
@@ -729,8 +761,13 @@ export const KnightChaseGame: React.FC<GameProps> = ({
             <HomeIcon className="w-6 h-6" />
         </button>
         <div className={`flex flex-col items-center px-4 py-1 rounded-lg border shadow-sm transform rotate-1 ${theme === 'chalk' ? 'bg-zinc-800 border-zinc-600 text-white' : 'bg-white border-zinc-200 text-zinc-800'}`}>
-            <h2 className="font-hand text-xl font-bold">{levelConfig ? levelConfig.title : (mode === 'online' ? t('menu_online', lang) : (mode === 'pvp' ? t('menu_duel', lang) : t('menu_ai_training', lang)))}</h2>
+            <h2 className="font-hand text-xl font-bold">{levelConfig ? t(`adv_l${levelConfig.id}_title`, lang) : (mode === 'online' ? t('menu_online', lang) : (mode === 'pvp' ? t('menu_duel', lang) : t('menu_ai_training', lang)))}</h2>
             <span className="text-[10px] font-mono opacity-60 uppercase tracking-widest">{winner ? t('game_match_ended', lang) : (mode === 'online' ? (turn === playerType ? t('game_turn_you', lang) : t('game_turn_opponent', lang)) : (turn === 'p1' ? t('game_turn_you', lang) : t('game_turn_thinking', lang)))}</span>
+            {levelConfig?.moveLimit && (
+                <span className={`text-xs font-hand font-bold mt-1 block ${theme === 'chalk' ? 'text-zinc-400' : 'text-zinc-500'} ${(levelConfig.moveLimit - Math.ceil(turnCount / 2)) <= 3 ? 'text-red-500 animate-pulse' : ''}`}>
+                     Moves: {Math.ceil(turnCount / 2)} / {levelConfig.moveLimit}
+                </span>
+            )}
         </div>
         <button onClick={handlePlayAgain} className={`p-2 rounded-full transition-colors border border-transparent ${theme === 'chalk' ? 'hover:bg-white/10 hover:border-zinc-500 text-white' : 'hover:bg-zinc-200 hover:border-zinc-300 text-zinc-600'}`}>
             <ArrowPathIcon className="w-6 h-6" />

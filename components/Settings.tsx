@@ -55,8 +55,8 @@ export const Settings: React.FC<SettingsProps> = ({
     lang,
     onLanguageChange
 }) => {
-  const [musicVolume, setMusicVolumeState] = useState(1);
-  const [sfxVolume, setSfxVolumeState] = useState(1);
+  const [musicVolume, setMusicVolumeState] = useState(0.1);
+  const [sfxVolume, setSfxVolumeState] = useState(0.1);
   const [showDoodleCanvas, setShowDoodleCanvas] = useState(false);
   const [activeInfo, setActiveInfo] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

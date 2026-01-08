@@ -1,7 +1,7 @@
-let sfxVolume = 1;
-let musicVolume = 1;
-let _sfxVolumeBeforeMute = 1; // Store volume before mute
-let _musicVolumeBeforeMute = 1; // Store volume before mute
+let sfxVolume = 0.05;
+let musicVolume = 0.0;
+let _sfxVolumeBeforeMute = 0.05; // Store volume before mute
+let _musicVolumeBeforeMute = 0.05; // Store volume before mute
 let isMuted = false; // Global mute state
 
 const sfxCache: {[key: string]: HTMLAudioElement} = {};

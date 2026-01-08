@@ -1,10 +1,12 @@
 
 // i18n.ts - Localization system
 import { safeStorage } from './storage';
+import { adventureTranslations } from './adventure_translations';
 
 export type LanguageCode = 'en' | 'tr' | 'ar' | 'de' | 'es' | 'it' | 'ru';
 
 export interface Translation {
+  [key: string]: string;
   // Menu
   menu_ai_training: string;
   menu_duel: string;
@@ -49,6 +51,7 @@ export interface Translation {
   game_defeat: string;
   game_captured: string;
   game_trapped: string;
+  game_out_of_moves: string;
   
   // Modifiers
   mod_coffee: string;
@@ -103,6 +106,7 @@ const translations: Record<LanguageCode, Translation> = {
     game_defeat: "TRASHED!",
     game_captured: "CAPTURED THE ENEMY!",
     game_trapped: "OPPONENT IS TRAPPED!",
+    game_out_of_moves: "OUT OF MOVES!",
     
     mod_coffee: "Coffee Spill",
     mod_sabotage: "Sabotage",
@@ -113,7 +117,7 @@ const translations: Record<LanguageCode, Translation> = {
     adventure_refill_in: "Refills in:"
   },
   tr: {
-    menu_ai_training: "Yapay Zeka Eğitimi",
+    menu_ai_training: "Yapay Zekaya Karşı",
     menu_duel: "Düello - Paslaş & Oyna",
     menu_adventure: "Macera",
     menu_online: "Çevrimiçi Oyna",
@@ -153,6 +157,7 @@ const translations: Record<LanguageCode, Translation> = {
     game_defeat: "ÇÖP OLDUN!",
     game_captured: "DÜŞMANI YAKALADIN!",
     game_trapped: "RAKİP SIKIŞTI!",
+    game_out_of_moves: "HAMLE BİTTİ!",
     
     mod_coffee: "Kahve Dökülmesi",
     mod_sabotage: "Sabotaj",
@@ -203,6 +208,7 @@ const translations: Record<LanguageCode, Translation> = {
     game_defeat: "هزيمة!",
     game_captured: "تم أسر العدو!",
     game_trapped: "الخصم محاصر!",
+    game_out_of_moves: "نفدت الحركات!",
     
     mod_coffee: "انسكاب القهوة",
     mod_sabotage: "تخريب",
@@ -253,6 +259,7 @@ const translations: Record<LanguageCode, Translation> = {
     game_defeat: "NIEDERLAGE!",
     game_captured: "GEGNER GEFANGEN!",
     game_trapped: "GEGNER SITZT FEST!",
+    game_out_of_moves: "KEINE ZÜGE MEHR!",
     
     mod_coffee: "Kaffee verschüttet",
     mod_sabotage: "Sabotage",
@@ -303,6 +310,7 @@ const translations: Record<LanguageCode, Translation> = {
     game_defeat: "¡DERROTA!",
     game_captured: "¡ENEMIGO CAPTURADO!",
     game_trapped: "¡OPONENTE ATRAPADO!",
+    game_out_of_moves: "¡SIN MOVIMIENTOS!",
     
     mod_coffee: "Derrame de Café",
     mod_sabotage: "Sabotaje",
@@ -353,6 +361,7 @@ const translations: Record<LanguageCode, Translation> = {
     game_defeat: "SCONFITTA!",
     game_captured: "NEMICO CATTURATO!",
     game_trapped: "AVVERSARIO INTRAPPOLATO!",
+    game_out_of_moves: "MOSSE ESAURITE!",
     
     mod_coffee: "Caffè Rovesciato",
     mod_sabotage: "Sabotaggio",
@@ -403,6 +412,7 @@ const translations: Record<LanguageCode, Translation> = {
     game_defeat: "ПОРАЖЕНИЕ!",
     game_captured: "ВРАГ ЗАХВАЧЕН!",
     game_trapped: "ПРОТИВНИК В ЛОВУШКЕ!",
+    game_out_of_moves: "ХОДЫ ЗАКОНЧИЛИСЬ!",
     
     mod_coffee: "Разлитый кофе",
     mod_sabotage: "Саботаж",
@@ -413,6 +423,13 @@ const translations: Record<LanguageCode, Translation> = {
     adventure_refill_in: "Refills in:"
   }
 };
+
+// Merge Adventure Translations
+Object.keys(adventureTranslations).forEach((lang) => {
+    if (translations[lang as LanguageCode]) {
+        Object.assign(translations[lang as LanguageCode], adventureTranslations[lang as LanguageCode]);
+    }
+});
 
 export const getLanguage = (): LanguageCode => {
   const storedLang = safeStorage.getItem('language');
