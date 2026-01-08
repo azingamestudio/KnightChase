@@ -17,7 +17,9 @@ import { io, Socket } from 'socket.io-client';
 import { API_URL, SOCKET_URL, registerUser, submitScore } from './src/lib/api';
 import { getLanguage, setLanguage, LanguageCode, t } from './src/lib/i18n';
 import { safeStorage } from './src/lib/storage';
-import { initializeFirebase } from './src/lib/firebase';
+import { initializeFirebase, auth } from './src/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { syncUserData } from './src/lib/cloud-store';
 
 type View = 'menu' | 'ai_select' | 'game_pvp' | 'game_ai' | 'game_adventure' | 'game_online' | 'adventure' | 'online_lobby' | 'leaderboard' | 'settings';
 
@@ -76,6 +78,14 @@ const App: React.FC = () => {
     // Initialize Firebase
     initializeFirebase();
 
+    // Auth Listener
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log('User signed in:', user.email);
+            syncUserData();
+        }
+    });
+
     // Initialize AdMob
     initializeAdMob().then(() => {
         if (!isPremium) {
@@ -90,6 +100,10 @@ const App: React.FC = () => {
     registerPremiumListener((status) => {
         setIsPremium(status);
     });
+
+    return () => {
+        unsubscribeAuth();
+    };
   }, []);
 
   // Lives System Logic
