@@ -139,6 +139,13 @@ body {
 
 /* --- NEW ANIMATIONS --- */
 
+/* Smooth Bounce Transition for Movement */
+.transition-bounce {
+    transition-property: top, left, transform;
+    transition-duration: 0.4s;
+    transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* Crumple Effect for Defeat */
 @keyframes crumple {
     0% { transform: scale(1) rotate(1deg); filter: brightness(1); }
@@ -192,4 +199,14 @@ body {
 @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
+}
+
+/* Landing Dust Effect */
+@keyframes dust {
+    0% { transform: scale(0.5); opacity: 0.8; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+.animate-dust {
+    animation: dust 0.4s ease-out forwards;
 }

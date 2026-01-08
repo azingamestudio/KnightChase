@@ -172,6 +172,17 @@ export const KnightChaseGame: React.FC<GameProps> = ({
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [isCrumpled, setIsCrumpled] = useState(false);
   
+  // Animation States
+  const [p1Scale, setP1Scale] = useState(1);
+  const [p2Scale, setP2Scale] = useState(1);
+  const [effects, setEffects] = useState<{id: number, x: number, y: number}[]>([]);
+
+  const addEffect = (x: number, y: number) => {
+      const id = Date.now() + Math.random();
+      setEffects(prev => [...prev, {id, x, y}]);
+      setTimeout(() => setEffects(prev => prev.filter(e => e.id !== id)), 500);
+  };
+  
   // Sabotage State
   const [p1Sabotage, setP1Sabotage] = useState(0); // 0-100
   const [showPlane, setShowPlane] = useState(false);
@@ -369,6 +380,20 @@ export const KnightChaseGame: React.FC<GameProps> = ({
 
     playSFX('sfx_pencil.mp3');
     const currentPos = turn === 'p1' ? p1Pos : p2Pos;
+
+    // Animation Triggers: Pick Up & Squash
+    if (turn === 'p1') {
+        setP1Scale(1.15); // Pick up
+        setTimeout(() => setP1Scale(0.9), 300); // Squash on land
+        setTimeout(() => setP1Scale(1), 450); // Recover
+    } else {
+        setP2Scale(1.15);
+        setTimeout(() => setP2Scale(0.9), 300);
+        setTimeout(() => setP2Scale(1), 450);
+    }
+    
+    // Trigger dust on landing (delayed slightly)
+    setTimeout(() => addEffect(target.x, target.y), 300);
 
     // Sabotage Gain
     let nextP1Sabotage = p1Sabotage;
@@ -619,8 +644,10 @@ export const KnightChaseGame: React.FC<GameProps> = ({
   };
 
   const renderCell = (x: number, y: number) => {
-    const isP1 = p1Pos.x === x && p1Pos.y === y;
-    const isP2 = p2Pos.x === x && p2Pos.y === y;
+    // const isP1 = p1Pos.x === x && p1Pos.y === y; // Removed for overlay rendering
+    // const isP2 = p2Pos.x === x && p2Pos.y === y; // Removed for overlay rendering
+    const isP1 = false; 
+    const isP2 = false;
     const isBlocked = blocked.has(`${x},${y}`);
     const isMystery = mysteryPos && mysteryPos.x === x && mysteryPos.y === y;
 
@@ -648,9 +675,11 @@ export const KnightChaseGame: React.FC<GameProps> = ({
       >
         <div className="absolute inset-0 flex items-center justify-center">
             {isBlocked && !isP1 && !isP2 && (
-                <svg viewBox="0 0 24 24" className={`w-3/4 h-3/4 opacity-80 ${modifiers.invisibleInk ? 'invisible-fade' : ''}`} style={{color: theme === 'chalk' ? 'white' : theme === 'blue' ? '#1e40af' : '#d4d4d8'}} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                    <path d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <div className={`w-full h-full flex items-center justify-center animate-in zoom-in duration-300 ${modifiers.invisibleInk ? 'invisible-fade' : ''}`}>
+                    <svg viewBox="0 0 24 24" className="w-3/4 h-3/4 drop-shadow-sm" style={{color: '#ef4444', filter: 'drop-shadow(1px 1px 0px rgba(0,0,0,0.1))'}} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M 5 5 C 9 8 15 16 19 19 M 19 5 C 15 8 9 16 5 19" />
+                    </svg>
+                </div>
             )}
             {isMystery && !isP1 && !isP2 && (
                 <div className="w-3/4 h-3/4 animate-bounce">
@@ -659,22 +688,7 @@ export const KnightChaseGame: React.FC<GameProps> = ({
                     </div>
                 </div>
             )}
-            {isP1 && (
-                <div className="relative w-4/5 h-4/5 transition-all duration-300 animate-scribble drop-shadow-md z-10">
-                     <PlayerIcon skin={playerSkin} customSkin={customSkin} color={theme === 'chalk' ? '#38bdf8' : '#2563eb'} />
-                     <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[8px] font-hand font-bold bg-white px-1.5 py-0.5 rounded border border-zinc-200 whitespace-nowrap shadow-sm text-black">
-                        {playerNames.p1}
-                     </div>
-                     {p1HasTeleport && ( <div className="absolute -top-2 -right-2 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center animate-pulse"><BoltIcon className="w-3 h-3 text-white" /></div> )}
-                </div>
-            )}
-            {isP2 && (
-                <div className="relative w-4/5 h-4/5 transition-all duration-300 drop-shadow-md z-10 text-red-500">
-                     <img src="/red.png" alt="Player 2" className="w-full h-full object-contain" />
-                     <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-hand font-bold bg-white px-1.5 py-0.5 rounded border border-zinc-200 shadow-sm text-black">{oppName}</div>
-                     {chatMsg && ( <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white border border-zinc-800 rounded p-1.5 text-[9px] whitespace-nowrap shadow-md font-hand z-20 animate-in zoom-in duration-200 text-black">{chatMsg}</div> )}
-                </div>
-            )}
+            {/* Players moved to overlay */}
             {(isLegal || isLegalP2) && ( <div className={`w-3 h-3 rounded-full animate-pulse ${p1HasTeleport || p2HasTeleport ? 'bg-purple-400' : (theme === 'chalk' ? 'bg-green-400' : 'bg-green-400/30')}`}></div> )}
             {winner === 'p1' && isP2 && victoryDoodle && (
                 <div className="absolute inset-0 z-30 pointer-events-none animate-[stamp_0.4s_cubic-bezier(0.25,1,0.5,1)_forwards]" style={{ transformOrigin: 'center center' }}>
@@ -759,8 +773,75 @@ export const KnightChaseGame: React.FC<GameProps> = ({
         {/* Removed bg-paper-variant and replaced with solid bg to avoid double lines */}
         <div className={`relative p-2 sketch-border shadow-2xl rotate-1 transition-all duration-1000 ${isCrumpled ? 'opacity-0' : ''}`} style={{backgroundColor: theme === 'chalk' ? '#3f3f46' : '#fff'}}>
             {console.log('Rendering game board. isGameStarted:', isGameStarted)}
-            <div className={`grid grid-cols-8 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] border-l border-t select-none ${theme === 'chalk' ? 'border-zinc-600' : 'border-zinc-300/50'}`}>
+            <div className={`grid grid-cols-8 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] border-l border-t select-none relative ${theme === 'chalk' ? 'border-zinc-600' : 'border-zinc-300/50'}`}>
             {Array.from({ length: BOARD_SIZE }).map((_, y) => Array.from({ length: BOARD_SIZE }).map((_, x) => renderCell(x, y)))}
+            
+            {/* Player Overlays - Smooth Movement */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="relative w-full h-full">
+                    {/* P1 Token */}
+                    <div 
+                        className="absolute transition-bounce z-20 will-change-transform" 
+                        style={{ 
+                            left: `${p1Pos.x * 12.5}%`, 
+                            top: `${p1Pos.y * 12.5}%`, 
+                            width: '12.5%', 
+                            height: '12.5%',
+                            transform: `scale(${p1Scale})`,
+                            zIndex: p1Scale > 1 ? 30 : 20 // Bring to front when picked up
+                        }}
+                    >
+                        <div className="relative w-full h-full flex items-center justify-center">
+                            <div className="relative w-4/5 h-4/5 transition-all duration-300 animate-scribble drop-shadow-xl z-10" style={{ boxShadow: p1Scale > 1 ? '0 10px 15px -3px rgba(0, 0, 0, 0.3)' : '' }}>
+                                <PlayerIcon skin={playerSkin} customSkin={customSkin} color={theme === 'chalk' ? '#38bdf8' : '#2563eb'} />
+                                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[8px] font-hand font-bold bg-white px-1.5 py-0.5 rounded border border-zinc-200 whitespace-nowrap shadow-sm text-black">
+                                    {playerNames.p1}
+                                </div>
+                                {activePowerUp?.player === 'p1' && activePowerUp?.type === 'teleport' && ( 
+                                    <div className="absolute -top-2 -right-2 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center animate-pulse">
+                                        <BoltIcon className="w-3 h-3 text-white" />
+                                    </div> 
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* P2 Token */}
+                    <div 
+                        className="absolute transition-bounce z-20 will-change-transform" 
+                        style={{ 
+                            left: `${p2Pos.x * 12.5}%`, 
+                            top: `${p2Pos.y * 12.5}%`, 
+                            width: '12.5%', 
+                            height: '12.5%',
+                            transform: `scale(${p2Scale})`,
+                            zIndex: p2Scale > 1 ? 30 : 20
+                        }}
+                    >
+                        <div className="relative w-full h-full flex items-center justify-center">
+                             <div className="relative w-4/5 h-4/5 transition-all duration-300 drop-shadow-xl z-10 text-red-500" style={{ boxShadow: p2Scale > 1 ? '0 10px 15px -3px rgba(0, 0, 0, 0.3)' : '' }}>
+                                <img src="/red.png" alt="Player 2" className="w-full h-full object-contain" />
+                                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-hand font-bold bg-white px-1.5 py-0.5 rounded border border-zinc-200 shadow-sm text-black">{oppName}</div>
+                                {chatMsg && ( <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white border border-zinc-800 rounded p-1.5 text-[9px] whitespace-nowrap shadow-md font-hand z-20 animate-in zoom-in duration-200 text-black">{chatMsg}</div> )}
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Landing Effects */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {effects.map(effect => (
+                    <div 
+                        key={effect.id} 
+                        className="absolute w-[12.5%] h-[12.5%] flex items-center justify-center"
+                        style={{ left: `${effect.x * 12.5}%`, top: `${effect.y * 12.5}%` }}
+                    >
+                        <div className={`w-3/4 h-3/4 rounded-full animate-dust blur-sm ${theme === 'chalk' ? 'bg-white/30' : 'bg-zinc-400/30'}`}></div>
+                    </div>
+                ))}
+            </div>
+
             </div>
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 {stickers.map(sticker => (
