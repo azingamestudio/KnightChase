@@ -3,15 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React from 'react';
-import { UserGroupIcon, PaperAirplaneIcon, MapIcon, GlobeAltIcon, TrophyIcon, Cog6ToothIcon, StarIcon } from '@heroicons/react/24/outline';
+import { UserGroupIcon, PaperAirplaneIcon, MapIcon, GlobeAltIcon, TrophyIcon, Cog6ToothIcon, StarIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { playMusic } from '../src/lib/audio';
 import { t, LanguageCode } from '../src/lib/i18n';
+import { User } from 'firebase/auth';
 
 interface MainMenuProps {
   onNavigate: (view: string) => void;
   isPremium: boolean;
   onBuyPremium: () => void;
   lang: LanguageCode;
+  user: User | null;
+  onSignIn: () => void;
+  onSignOut: () => void;
 }
 
 
@@ -39,9 +43,23 @@ const MenuButton = ({
     </button>
 );
 
-export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuyPremium, lang }) => {
+export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuyPremium, lang, user, onSignIn, onSignOut }) => {
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
+        {/* Top Right Profile Icon */}
+        <div className="absolute top-4 right-4 z-50">
+            <button 
+                onClick={() => { playMusic('sfx_bg.mp3'); onNavigate('settings'); }}
+                className="w-10 h-10 rounded-full bg-white border-2 border-zinc-300 shadow-sm flex items-center justify-center hover:bg-zinc-50 transition-colors"
+            >
+                {user && user.photoURL ? (
+                    <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                    <UserCircleIcon className={`w-6 h-6 ${user ? 'text-blue-500' : 'text-zinc-400'}`} />
+                )}
+            </button>
+        </div>
+
       <div className="flex flex-col items-center w-full max-w-sm mx-auto px-4 py-8 min-h-screen justify-center">
       
       <img src="/knight-chase-logo.png" alt="Knight Chase Logo" className="w-full max-w-xs mx-auto mb-6 animate-in fade-in zoom-in duration-700" />
@@ -97,7 +115,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
                 delay={500}
             />
         </div>
-
+        
         {!isPremium && (
             <button 
                 onClick={() => { playMusic('sfx_bg.mp3'); onBuyPremium(); }}

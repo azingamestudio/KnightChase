@@ -37,8 +37,10 @@ export const initializeFirebase = async () => {
 
 export const signInWithGoogle = async (): Promise<User | null> => {
     try {
+        console.log('Starting Google Sign-In...');
         // 1. Native Google Sign In
         const result = await FirebaseAuthentication.signInWithGoogle();
+        console.log('Native Sign-In Success:', result);
         
         // 2. Create Credential
         const credential = GoogleAuthProvider.credential(result.credential?.idToken);
@@ -46,8 +48,10 @@ export const signInWithGoogle = async (): Promise<User | null> => {
         // 3. Sign In to Firebase JS SDK (for Firestore access)
         const userCredential = await signInWithCredential(auth, credential);
         return userCredential.user;
-    } catch (error) {
+    } catch (error: any) {
         console.error('Google Sign-In Error:', error);
+        // Show error to user for debugging
+        alert(`Sign-In Error: ${error.message || JSON.stringify(error)}`);
         return null;
     }
 };

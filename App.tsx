@@ -17,8 +17,8 @@ import { io, Socket } from 'socket.io-client';
 import { API_URL, SOCKET_URL, registerUser, submitScore } from './src/lib/api';
 import { getLanguage, setLanguage, LanguageCode, t } from './src/lib/i18n';
 import { safeStorage } from './src/lib/storage';
-import { initializeFirebase, auth } from './src/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { initializeFirebase, auth, signInWithGoogle, signOut } from './src/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { syncUserData } from './src/lib/cloud-store';
 
 type View = 'menu' | 'ai_select' | 'game_pvp' | 'game_ai' | 'game_adventure' | 'game_online' | 'adventure' | 'online_lobby' | 'leaderboard' | 'settings';
@@ -55,6 +55,7 @@ const App: React.FC = () => {
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [isMutedState, setIsMutedState] = useState<boolean>(getIsMuted());
   const [currentLang, setCurrentLang] = useState<LanguageCode>(getLanguage());
+  const [user, setUser] = useState<User | null>(null);
 
   // Adventure Mode Lives System
   const MAX_LIVES_FREE = 10;
@@ -80,6 +81,7 @@ const App: React.FC = () => {
 
     // Auth Listener
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+        setUser(user);
         if (user) {
             console.log('User signed in:', user.email);
             syncUserData();
@@ -342,7 +344,15 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (view) {
         case 'menu':
-            return <MainMenu onNavigate={handleNavigate} isPremium={isPremium} onBuyPremium={purchasePremium} lang={currentLang} />;
+            return <MainMenu 
+                onNavigate={handleNavigate} 
+                isPremium={isPremium} 
+                onBuyPremium={purchasePremium} 
+                lang={currentLang}
+                user={user}
+                onSignIn={signInWithGoogle}
+                onSignOut={signOut}
+            />;
         case 'ai_select':
             return (
                 <div className="flex flex-col items-center justify-center min-h-screen p-6 space-y-6 animate-in fade-in zoom-in duration-300">
@@ -525,7 +535,15 @@ const App: React.FC = () => {
                  </div>
             );
         default:
-            return <MainMenu onNavigate={handleNavigate} />;
+            return <MainMenu 
+                onNavigate={handleNavigate} 
+                isPremium={isPremium} 
+                onBuyPremium={purchasePremium} 
+                lang={currentLang}
+                user={user}
+                onSignIn={signInWithGoogle}
+                onSignOut={signOut}
+            />;
     }
   };
 

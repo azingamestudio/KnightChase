@@ -12,7 +12,20 @@
           "package_name": "com.azingamestudio.knightchase"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "758569726130-2qp14suk2hk6kbocgb4unb94ktj5ukqp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.azingamestudio.knightchase",
+            "certificate_hash": "5b401fb63f4205cedc4e93d395f3f70cd30717c9"
+          }
+        },
+        {
+          "client_id": "758569726130-k2oh6630gcsfpb19avbuei2vtp42i6iv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD33TFQu_tSnh49WSvNX4PDKhSXlTz43Sk"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "758569726130-k2oh6630gcsfpb19avbuei2vtp42i6iv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

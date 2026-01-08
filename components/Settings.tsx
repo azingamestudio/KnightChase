@@ -10,6 +10,7 @@ import { setSFXVolume, setMusicVolume } from '../src/lib/audio';
 import { DoodleCanvas } from './DoodleCanvas';
 import { registerUser } from '../src/lib/api';
 import { t, LanguageCode } from '../src/lib/i18n';
+import { User } from 'firebase/auth';
 
 interface SettingsProps {
   onBack: () => void;
@@ -32,6 +33,9 @@ interface SettingsProps {
   onDebugTogglePremium: () => void; // For testing
   lang: LanguageCode;
   onLanguageChange: (lang: LanguageCode) => void;
+  user: User | null;
+  onSignIn: () => void;
+  onSignOut: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
@@ -53,7 +57,10 @@ export const Settings: React.FC<SettingsProps> = ({
     onRestorePurchases,
     onDebugTogglePremium,
     lang,
-    onLanguageChange
+    onLanguageChange,
+    user,
+    onSignIn,
+    onSignOut
 }) => {
   const [musicVolume, setMusicVolumeState] = useState(0.1);
   const [sfxVolume, setSfxVolumeState] = useState(0.1);
@@ -189,6 +196,49 @@ export const Settings: React.FC<SettingsProps> = ({
                     </button>
                 ))}
             </div>
+        </div>
+
+        {/* ACCOUNT SECTION */}
+        <div className="sketch-border bg-white p-6">
+            <div className="flex items-center space-x-3 mb-4">
+                <UserIcon className="w-6 h-6 text-zinc-600" />
+                <span className="font-hand text-xl font-bold text-zinc-800">{t('account_title', lang) || "Account"}</span>
+            </div>
+            
+            {user ? (
+                <div className="flex flex-col items-center space-y-4">
+                    {user.photoURL ? (
+                        <img src={user.photoURL} alt="Profile" className="w-16 h-16 rounded-full border-2 border-zinc-800" />
+                    ) : (
+                        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center border-2 border-zinc-800">
+                            <span className="text-2xl font-bold text-blue-800">{user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}</span>
+                        </div>
+                    )}
+                    <div className="text-center">
+                        <p className="font-hand font-bold text-lg">{user.displayName || "User"}</p>
+                        <p className="font-mono text-xs text-zinc-500">{user.email}</p>
+                    </div>
+                    <button 
+                        onClick={onSignOut}
+                        className="w-full sketch-button bg-red-50 hover:bg-red-100 py-2 font-hand font-bold text-red-600"
+                    >
+                        {t('common_sign_out', lang) || "Sign Out"}
+                    </button>
+                </div>
+            ) : (
+                <div className="flex flex-col items-center space-y-3">
+                    <p className="font-hand text-sm text-center text-zinc-600">
+                        {t('account_signin_desc', lang) || "Sign in to save your progress to the cloud and play across devices."}
+                    </p>
+                    <button 
+                        onClick={onSignIn}
+                        className="w-full sketch-button bg-blue-50 hover:bg-blue-100 py-3 font-hand font-bold text-blue-600 flex items-center justify-center gap-2"
+                    >
+                        <GlobeAltIcon className="w-5 h-5" />
+                        {t('common_sign_in_google', lang) || "Sign In with Google"}
+                    </button>
+                </div>
+            )}
         </div>
 
         {/* Audio Settings */}
