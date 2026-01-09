@@ -56,6 +56,7 @@ const App: React.FC = () => {
   const [isMutedState, setIsMutedState] = useState<boolean>(getIsMuted());
   const [currentLang, setCurrentLang] = useState<LanguageCode>(getLanguage());
   const [user, setUser] = useState<User | null>(null);
+  const [isAdMobReady, setIsAdMobReady] = useState<boolean>(false);
 
   // Adventure Mode Lives System
   const MAX_LIVES_FREE = 10;
@@ -90,6 +91,7 @@ const App: React.FC = () => {
 
     // Initialize AdMob
     initializeAdMob().then(() => {
+        setIsAdMobReady(true);
         if (!isPremium) {
             prepareInterstitialAd();
         }
@@ -161,6 +163,9 @@ const App: React.FC = () => {
       } else {
           showBannerAd();
       }
+      return () => {
+          hideBannerAd();
+      };
   }, [isPremium]);
 
   // Socket.IO State
@@ -355,24 +360,100 @@ const App: React.FC = () => {
             />;
         case 'ai_select':
             return (
-                <div className="flex flex-col items-center justify-center min-h-screen p-6 space-y-6 animate-in fade-in zoom-in duration-300">
-                    <div className="w-full max-w-md space-y-4">
-                        <button onClick={() => setView('menu')} className="mb-4 flex items-center text-zinc-500 hover:text-zinc-800 font-hand font-bold">
-                            <ArrowLeftIcon className="w-5 h-5 mr-2" /> Back
+                <div className="flex flex-col items-center justify-center min-h-screen p-6 space-y-6 animate-in fade-in zoom-in duration-300 relative overflow-hidden">
+                    {/* Background Doodles */}
+                    <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+                        <div className="absolute top-10 left-10 w-32 h-32 border-4 border-zinc-900 rounded-full"></div>
+                        <div className="absolute bottom-20 right-20 w-48 h-48 border-4 border-zinc-900 rotate-12"></div>
+                    </div>
+
+                    <div className="w-full max-w-md space-y-6 relative z-10">
+                        <button onClick={() => setView('menu')} className="mb-2 flex items-center text-zinc-500 hover:text-zinc-800 font-hand font-bold transition-colors">
+                            <ArrowLeftIcon className="w-6 h-6 mr-2" /> {t('game_back', currentLang)}
                         </button>
-                        <h2 className="font-hand text-3xl font-bold text-center mb-6">Select Difficulty</h2>
                         
-                        <button onClick={() => startGameAI('easy')} className="w-full sketch-button py-4 px-6 bg-green-50 hover:bg-green-100 flex items-center justify-between group">
-                            <span className="font-hand text-2xl font-bold">Easy</span>
-                            <span className="text-2xl group-hover:scale-125 transition-transform">🌱</span>
+                        <div className="text-center mb-8">
+                            <h2 className="font-hand text-4xl font-black text-zinc-800 tracking-tight">Select Difficulty</h2>
+                            <p className="font-hand text-zinc-500 mt-2">Choose your opponent wisely</p>
+                        </div>
+                        
+                        {/* Easy Card */}
+                        <button 
+                            onClick={() => startGameAI('easy')} 
+                            className="w-full group relative overflow-hidden rounded-2xl bg-white border-2 border-zinc-200 hover:border-green-500 transition-all duration-300 shadow-sm hover:shadow-md"
+                        >
+                            <div className="absolute top-0 left-0 w-2 h-full bg-green-500 transition-all group-hover:w-full opacity-10"></div>
+                            <div className="p-6 flex items-center justify-between relative z-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center group-hover:scale-110 transition-transform p-2.5">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-green-600">
+                                            <path d="M12 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-3 7a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v5a1 1 0 0 0 1 1h1v2H7v-2h1a1 1 0 0 0 1-1V9Zm-4 11h14v2H5v-2Z" />
+                                        </svg>
+                                    </div>
+                                    <div className="text-left">
+                                        <span className="block font-hand text-2xl font-bold text-zinc-800 group-hover:text-green-700 transition-colors">Easy</span>
+                                        <span className="block font-hand text-xs text-zinc-500">Perfect for beginners</span>
+                                    </div>
+                                </div>
+                                <div className="w-8 h-8 rounded-full border-2 border-zinc-200 group-hover:border-green-500 group-hover:bg-green-500 flex items-center justify-center transition-all">
+                                    <svg className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
                         </button>
-                        <button onClick={() => startGameAI('medium')} className="w-full sketch-button py-4 px-6 bg-yellow-50 hover:bg-yellow-100 flex items-center justify-between group">
-                            <span className="font-hand text-2xl font-bold">Medium</span>
-                            <span className="text-2xl group-hover:scale-125 transition-transform">🤖</span>
+
+                        {/* Medium Card */}
+                        <button 
+                            onClick={() => startGameAI('medium')} 
+                            className="w-full group relative overflow-hidden rounded-2xl bg-white border-2 border-zinc-200 hover:border-yellow-500 transition-all duration-300 shadow-sm hover:shadow-md"
+                        >
+                            <div className="absolute top-0 left-0 w-2 h-full bg-yellow-500 transition-all group-hover:w-full opacity-10"></div>
+                            <div className="p-6 flex items-center justify-between relative z-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center group-hover:scale-110 transition-transform p-2.5">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-yellow-600">
+                                            <path d="M16 8a2 2 0 1 0-4 0 2 2 0 0 0 4 0ZM7 18h10v2H7v-2Zm3-6v2h4v-2h-4Zm-1-4h1.5l1-3 1.5 3H15l-1.5 6h-4l-1.5-6Z" />
+                                            <path d="M12 2L9 6h6l-3-4Z" />
+                                        </svg>
+                                    </div>
+                                    <div className="text-left">
+                                        <span className="block font-hand text-2xl font-bold text-zinc-800 group-hover:text-yellow-700 transition-colors">Medium</span>
+                                        <span className="block font-hand text-xs text-zinc-500">A balanced challenge</span>
+                                    </div>
+                                </div>
+                                <div className="w-8 h-8 rounded-full border-2 border-zinc-200 group-hover:border-yellow-500 group-hover:bg-yellow-500 flex items-center justify-center transition-all">
+                                    <svg className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
                         </button>
-                        <button onClick={() => startGameAI('hard')} className="w-full sketch-button py-4 px-6 bg-red-50 hover:bg-red-100 flex items-center justify-between group">
-                            <span className="font-hand text-2xl font-bold">Hard</span>
-                            <span className="text-2xl group-hover:scale-125 transition-transform">🔥</span>
+
+                        {/* Hard Card */}
+                        <button 
+                            onClick={() => startGameAI('hard')} 
+                            className="w-full group relative overflow-hidden rounded-2xl bg-white border-2 border-zinc-200 hover:border-red-500 transition-all duration-300 shadow-sm hover:shadow-md"
+                        >
+                            <div className="absolute top-0 left-0 w-2 h-full bg-red-500 transition-all group-hover:w-full opacity-10"></div>
+                            <div className="p-6 flex items-center justify-between relative z-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center group-hover:scale-110 transition-transform p-2.5">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-red-600">
+                                            <path d="M12 2l2.5 4h-5L12 2Zm-5 5 1.5 6h7L17 7l3 3-4 6H5L1 10l3-3Zm-2 13h14v2H5v-2Zm1-4h12v2H6v-2Z" />
+                                        </svg>
+                                    </div>
+                                    <div className="text-left">
+                                        <span className="block font-hand text-2xl font-bold text-zinc-800 group-hover:text-red-700 transition-colors">Hard</span>
+                                        <span className="block font-hand text-xs text-zinc-500">For true masters</span>
+                                    </div>
+                                </div>
+                                <div className="w-8 h-8 rounded-full border-2 border-zinc-200 group-hover:border-red-500 group-hover:bg-red-500 flex items-center justify-center transition-all">
+                                    <svg className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -566,20 +647,7 @@ const App: React.FC = () => {
         {renderView()}
       </div>
 
-      {/* Music Mute/Unmute Icon */}
-      <div
-        className="absolute bottom-4 left-4 z-20 cursor-pointer"
-        onClick={() => {
-          toggleMute();
-          setIsMutedState(getIsMuted());
-        }}
-      >
-        <img
-          src="/icon_footer_music.png"
-          alt="Music Toggle"
-          className={`h-10 transition-opacity duration-300 ${isMutedState ? 'opacity-30' : 'opacity-100'}`}
-        />
-      </div>
+
     </div>
   );
 };

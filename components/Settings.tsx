@@ -161,17 +161,6 @@ export const Settings: React.FC<SettingsProps> = ({
             <button onClick={onRestorePurchases} className="w-full text-xs text-zinc-500 underline mb-4">
                 {t('settings_restore_purchases', lang)}
             </button>
-            
-            {/* Developer Debug Area - Remove in production if desired, or keep hidden */}
-            <div className="border-t border-yellow-200 pt-2 mt-2">
-                <p className="text-[10px] text-zinc-400 font-mono mb-1">DEVELOPER ZONE</p>
-                <button 
-                    onClick={onDebugTogglePremium} 
-                    className="w-full py-1 bg-zinc-200 hover:bg-zinc-300 rounded text-xs font-mono text-zinc-600"
-                >
-                    [Debug] Force Toggle Premium
-                </button>
-            </div>
         </div>
 
         {/* Language Settings */}
@@ -198,48 +187,61 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
         </div>
 
-        {/* ACCOUNT SECTION */}
-        <div className="sketch-border bg-white p-6">
-            <div className="flex items-center space-x-3 mb-4">
-                <UserIcon className="w-6 h-6 text-zinc-600" />
-                <span className="font-hand text-xl font-bold text-zinc-800">{t('account_title', lang) || "Account"}</span>
-            </div>
-            
-            {user ? (
-                <div className="flex flex-col items-center space-y-4">
-                    {user.photoURL ? (
-                        <img src={user.photoURL} alt="Profile" className="w-16 h-16 rounded-full border-2 border-zinc-800" />
-                    ) : (
-                        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center border-2 border-zinc-800">
-                            <span className="text-2xl font-bold text-blue-800">{user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}</span>
-                        </div>
-                    )}
-                    <div className="text-center">
-                        <p className="font-hand font-bold text-lg">{user.displayName || "User"}</p>
-                        <p className="font-mono text-xs text-zinc-500">{user.email}</p>
+        {/* ACCOUNT SECTION - Redesigned */}
+            <div className="sketch-border bg-amber-50 p-6 relative overflow-hidden">
+                <div className="absolute -right-4 -top-4 w-16 h-16 bg-yellow-200 rounded-full opacity-50 blur-xl"></div>
+                
+                <div className="flex items-center space-x-3 mb-6 relative z-10">
+                    <div className="p-2 bg-white border-2 border-zinc-800 rounded-lg shadow-sm">
+                        <UserIcon className="w-6 h-6 text-zinc-800" />
                     </div>
-                    <button 
-                        onClick={onSignOut}
-                        className="w-full sketch-button bg-red-50 hover:bg-red-100 py-2 font-hand font-bold text-red-600"
-                    >
-                        {t('common_sign_out', lang) || "Sign Out"}
-                    </button>
+                    <span className="font-hand text-2xl font-black text-zinc-800 tracking-wide uppercase">{t('account_title', lang) || "Account"}</span>
                 </div>
-            ) : (
-                <div className="flex flex-col items-center space-y-3">
-                    <p className="font-hand text-sm text-center text-zinc-600">
-                        {t('account_signin_desc', lang) || "Sign in to save your progress to the cloud and play across devices."}
-                    </p>
-                    <button 
-                        onClick={onSignIn}
-                        className="w-full sketch-button bg-blue-50 hover:bg-blue-100 py-3 font-hand font-bold text-blue-600 flex items-center justify-center gap-2"
-                    >
-                        <GlobeAltIcon className="w-5 h-5" />
-                        {t('common_sign_in_google', lang) || "Sign In with Google"}
-                    </button>
-                </div>
-            )}
-        </div>
+                
+                {user ? (
+                    <div className="flex flex-col items-center space-y-4 relative z-10">
+                        <div className="relative">
+                            {user.photoURL ? (
+                                <img src={user.photoURL} alt="Profile" className="w-20 h-20 rounded-full border-4 border-zinc-800 shadow-md" />
+                            ) : (
+                                <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center border-4 border-zinc-800 shadow-md">
+                                    <span className="text-3xl font-black text-blue-800">{user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}</span>
+                                </div>
+                            )}
+                            <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
+                        </div>
+                        
+                        <div className="text-center">
+                            <p className="font-hand font-bold text-xl text-zinc-900">{user.displayName || "Adventurer"}</p>
+                            <p className="font-mono text-xs text-zinc-500 bg-white px-2 py-1 rounded border border-zinc-200 mt-1">{user.email}</p>
+                        </div>
+                        
+                        <button 
+                            onClick={onSignOut}
+                            className="w-full sketch-button bg-red-500 hover:bg-red-600 text-white py-3 font-hand font-bold text-lg border-b-4 border-red-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 shadow-lg"
+                        >
+                            <ArrowLeftIcon className="w-5 h-5" />
+                            {t('common_sign_out', lang) || "Sign Out"}
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center space-y-5 relative z-10">
+                        <div className="bg-white/80 p-4 rounded-xl border-2 border-dashed border-zinc-300 text-center w-full">
+                            <p className="font-hand text-zinc-600 leading-relaxed">
+                                {t('account_signin_desc', lang) || "Sign in to save your progress to the cloud and play across devices."}
+                            </p>
+                        </div>
+                        
+                        <button 
+                            onClick={onSignIn}
+                            className="w-full sketch-button bg-white hover:bg-zinc-50 text-zinc-800 py-3 font-hand font-bold text-lg border-2 border-zinc-800 shadow-[4px_4px_0px_0px_rgba(39,39,42,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all flex items-center justify-center gap-3"
+                        >
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" />
+                            {t('common_sign_in_google', lang) || "Sign In with Google"}
+                        </button>
+                    </div>
+                )}
+            </div>
 
         {/* Audio Settings */}
         <div className="sketch-border bg-white p-6">

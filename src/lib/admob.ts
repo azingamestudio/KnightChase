@@ -16,13 +16,13 @@ const ADMOB_CONFIG = {
     // Interstitial Ad ID (Full screen ad between levels)
     // Using Test ID as user didn't provide a standard interstitial ID yet
     interstitialId: {
-        android: 'ca-app-pub-3940256099942544/1033173712', // Test ID
+        android: 'ca-app-pub-1841588721645178/7096089404', 
         ios: 'ca-app-pub-3940256099942544/4411468910',     // Test ID
     },
 
     // Rewarded Ad ID (Watch video for lives)
     rewardedId: {
-        android: 'ca-app-pub-1841588721645178/7096089404',
+        android: 'ca-app-pub-1841588721645178/9231792992',
         ios: 'ca-app-pub-3940256099942544/1712485313',     // Test ID
     },
 

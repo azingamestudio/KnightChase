@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React from 'react';
-import { UserGroupIcon, PaperAirplaneIcon, MapIcon, GlobeAltIcon, TrophyIcon, Cog6ToothIcon, StarIcon, UserCircleIcon } from '@heroicons/react/24/outline';
-import { playMusic } from '../src/lib/audio';
+import { UserGroupIcon, PaperAirplaneIcon, MapIcon, GlobeAltIcon, TrophyIcon, Cog6ToothIcon, StarIcon, UserCircleIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from '@heroicons/react/24/outline';
+import { playMusic, toggleMute, getIsMuted } from '../src/lib/audio';
 import { t, LanguageCode } from '../src/lib/i18n';
 import { User } from 'firebase/auth';
+import { useState, useEffect } from 'react';
 
 interface MainMenuProps {
   onNavigate: (view: string) => void;
@@ -44,23 +45,44 @@ const MenuButton = ({
 );
 
 export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuyPremium, lang, user, onSignIn, onSignOut }) => {
-  return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
-        {/* Top Right Profile Icon */}
-        <div className="absolute top-4 right-4 z-50">
-            <button 
-                onClick={() => { playMusic('sfx_bg.mp3'); onNavigate('settings'); }}
-                className="w-10 h-10 rounded-full bg-white border-2 border-zinc-300 shadow-sm flex items-center justify-center hover:bg-zinc-50 transition-colors"
-            >
-                {user && user.photoURL ? (
-                    <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                    <UserCircleIcon className={`w-6 h-6 ${user ? 'text-blue-500' : 'text-zinc-400'}`} />
-                )}
-            </button>
-        </div>
+  const [isMuted, setIsMuted] = useState(getIsMuted());
 
-      <div className="flex flex-col items-center w-full max-w-sm mx-auto px-4 py-8 min-h-screen justify-center">
+  const handleToggleMute = () => {
+      toggleMute();
+      setIsMuted(getIsMuted());
+  };
+
+  return (
+    <div className="relative flex flex-col items-center min-h-[90vh] p-4 overflow-hidden gap-[15px]">
+
+      {/* Top Header with Icons */}
+      <div className="w-full flex justify-between items-start z-50 px-2">
+        {/* Mute Button - Top Left */}
+        <button 
+            onClick={handleToggleMute}
+            className="p-3 bg-white/90 backdrop-blur rounded-full border-2 border-zinc-800 shadow-lg hover:bg-white active:scale-95 transition-all"
+        >
+            {isMuted ? (
+                <SpeakerXMarkIcon className="w-4 h-4 text-red-500" />
+            ) : (
+                <SpeakerWaveIcon className="w-4 h-4 text-zinc-800" />
+            )}
+        </button>
+
+        {/* Profile Icon - Top Right */}
+        <button 
+            onClick={() => { playMusic('sfx_bg.mp3'); onNavigate('settings'); }}
+            className="w-12 h-12 rounded-full bg-white border-2 border-zinc-800 shadow-lg flex items-center justify-center hover:bg-zinc-50 transition-transform active:scale-95"
+        >
+            {user && user.photoURL ? (
+                <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-full object-cover" />
+            ) : (
+                <UserCircleIcon className={`w-8 h-8 ${user ? 'text-blue-600' : 'text-zinc-600'}`} />
+            )}
+        </button>
+      </div>
+
+      <div className="flex flex-col items-center w-full max-w-sm mx-auto px-4 justify-center">
       
       <img src="/knight-chase-logo.png" alt="Knight Chase Logo" className="w-full max-w-xs mx-auto mb-6 animate-in fade-in zoom-in duration-700" />
 
@@ -132,9 +154,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onNavigate, isPremium, onBuy
       </div>
       </div>
 
-      <div className="mt-8 text-center opacity-40">
+      <div className="text-center opacity-40">
         <div className="w-32 h-1 bg-zinc-400 rounded-full mx-auto mb-2"></div>
-        <p className="font-hand text-xs text-zinc-500">v1.2.0 • Az in Game</p>
+        <p className="font-hand text-xs text-zinc-500">v1.1.0 • Az in Game</p>
       </div>
     </div>
   );

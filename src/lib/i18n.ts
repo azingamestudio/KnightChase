@@ -17,6 +17,12 @@ export interface Translation {
   menu_unlock_premium: string;
   menu_remove_ads: string;
   
+  // Account
+  account_title: string;
+  account_signin_desc: string;
+  common_sign_in_google: string;
+  common_sign_out: string;
+
   // Settings
   settings_title: string;
   settings_premium_status: string;
@@ -75,6 +81,11 @@ const translations: Record<LanguageCode, Translation> = {
     menu_unlock_premium: "Unlock Premium 👑",
     menu_remove_ads: "Remove Ads & Unlock All Skins",
     
+    account_title: "Account",
+    account_signin_desc: "Sign in to save your progress to the cloud and play across devices.",
+    common_sign_in_google: "Sign in with Google",
+    common_sign_out: "Sign Out",
+
     settings_title: "Settings",
     settings_premium_status: "Premium Status:",
     settings_active: "ACTIVE 👑",
@@ -126,6 +137,11 @@ const translations: Record<LanguageCode, Translation> = {
     menu_unlock_premium: "Premium'u Aç 👑",
     menu_remove_ads: "Reklamları Kaldır & Tüm Kostümleri Aç",
     
+    account_title: "Hesap",
+    account_signin_desc: "İlerlemeni kaydetmek ve diğer cihazlarda oynamak için giriş yap.",
+    common_sign_in_google: "Google ile Giriş Yap",
+    common_sign_out: "Çıkış Yap",
+
     settings_title: "Ayarlar",
     settings_premium_status: "Premium Durumu:",
     settings_active: "AKTİF 👑",
@@ -177,6 +193,11 @@ const translations: Record<LanguageCode, Translation> = {
     menu_unlock_premium: "فتح العضوية المميزة 👑",
     menu_remove_ads: "إزالة الإعلانات وفتح جميع الأشكال",
     
+    account_title: "الحساب",
+    account_signin_desc: "سجل الدخول لحفظ تقدمك واللعب عبر الأجهزة.",
+    common_sign_in_google: "تسجيل الدخول عبر Google",
+    common_sign_out: "تسجيل الخروج",
+
     settings_title: "الإعدادات",
     settings_premium_status: "حالة العضوية:",
     settings_active: "نشط 👑",
@@ -228,6 +249,11 @@ const translations: Record<LanguageCode, Translation> = {
     menu_unlock_premium: "Premium Freischalten 👑",
     menu_remove_ads: "Keine Werbung & Alle Skins",
     
+    account_title: "Konto",
+    account_signin_desc: "Melde dich an, um deinen Fortschritt zu speichern.",
+    common_sign_in_google: "Anmelden mit Google",
+    common_sign_out: "Abmelden",
+
     settings_title: "Einstellungen",
     settings_premium_status: "Premium-Status:",
     settings_active: "AKTIV 👑",
@@ -279,6 +305,11 @@ const translations: Record<LanguageCode, Translation> = {
     menu_unlock_premium: "Desbloquear Premium 👑",
     menu_remove_ads: "Quitar Anuncios y Skins",
     
+    account_title: "Cuenta",
+    account_signin_desc: "Inicia sesión para guardar tu progreso.",
+    common_sign_in_google: "Iniciar sesión con Google",
+    common_sign_out: "Cerrar sesión",
+
     settings_title: "Ajustes",
     settings_premium_status: "Estado Premium:",
     settings_active: "ACTIVO 👑",
@@ -330,6 +361,11 @@ const translations: Record<LanguageCode, Translation> = {
     menu_unlock_premium: "Sblocca Premium 👑",
     menu_remove_ads: "Rimuovi Pubblicità & Skins",
     
+    account_title: "Account",
+    account_signin_desc: "Accedi per salvare i tuoi progressi.",
+    common_sign_in_google: "Accedi con Google",
+    common_sign_out: "Disconnetti",
+
     settings_title: "Impostazioni",
     settings_premium_status: "Stato Premium:",
     settings_active: "ATTIVO 👑",
@@ -381,6 +417,11 @@ const translations: Record<LanguageCode, Translation> = {
     menu_unlock_premium: "Разблокировать Премиум 👑",
     menu_remove_ads: "Убрать рекламу и скины",
     
+    account_title: "Аккаунт",
+    account_signin_desc: "Войдите, чтобы сохранить прогресс.",
+    common_sign_in_google: "Войти через Google",
+    common_sign_out: "Выйти",
+
     settings_title: "Настройки",
     settings_premium_status: "Премиум статус:",
     settings_active: "АКТИВЕН 👑",
@@ -453,5 +494,5 @@ export const setLanguage = (lang: LanguageCode) => {
 };
 
 export const t = (key: keyof Translation, lang: LanguageCode): string => {
-  return translations[lang][key] || translations['en'][key] || key;
+  return translations[lang][key] || translations['en'][key] || String(key);
 };

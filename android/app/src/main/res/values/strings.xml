@@ -6,4 +6,5 @@
     <string name="custom_url_scheme">com.azingamestudio.knightchase</string>
     <!-- Firebase Web Client ID (Authentication -> Sign-in method -> Google -> Web SDK configuration) -->
     <string name="server_client_id">758569726130-k2oh6630gcsfpb19avbuei2vtp42i6iv.apps.googleusercontent.com</string>
+    <string name="default_web_client_id">758569726130-k2oh6630gcsfpb19avbuei2vtp42i6iv.apps.googleusercontent.com</string>
 </resources>
